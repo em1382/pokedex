@@ -195,6 +195,7 @@ GEM
       io-console (~> 0.5)
     rexml (3.4.4)
     securerandom (0.4.1)
+    simplecov (1.2.0)
     sqlite3 (2.10.2-x86_64-linux-gnu)
     thor (1.5.0)
     timeout (0.6.1)
@@ -222,6 +223,7 @@ DEPENDENCIES
   debug
   puma (>= 5.0)
   rails (~> 8.1.4)
+  simplecov
   sqlite3 (>= 2.1)
   tzinfo-data
   webmock

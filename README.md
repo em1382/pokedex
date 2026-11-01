@@ -113,6 +113,15 @@ and for the `/sprites` rewrite in `next.config.ts`.
 ## Tests
 
 ```sh
-pnpm test        # Rails tests (network disabled via WebMock) + frontend lint + typecheck
+pnpm test        # Rails (Minitest) + frontend lint, typecheck and Vitest
+pnpm coverage    # both suites with coverage (backend/coverage, frontend/coverage)
 pnpm build       # production build of the frontend
 ```
+
+- **Backend** (`backend/test`, Minitest): models, services (upstream client, importer,
+  projection) and controllers. The network is disabled with WebMock, so tests never call PokeAPI.
+  Coverage: `COVERAGE=1 bin/rails test` (SimpleCov, line + branch).
+- **Frontend** (`frontend/src/**/*.test.ts(x)`, Vitest + Testing Library on jsdom): row mappers run
+  against the backend's `fields`/`counts` projection (`test/fixtures.ts`), the API client, loaders,
+  grid configuration (MIT limits), components, the server-component grid page and `next.config.ts`.
+  `pnpm --filter frontend test:watch` for watch mode.

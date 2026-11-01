@@ -19,4 +19,20 @@ class PokeapiRecordTest < ActiveSupport::TestCase
     assert_equal "item", PokeapiRecord.normalize("item")
     assert_nil PokeapiRecord.normalize("nope")
   end
+
+  test "lookup finds by id or case-insensitive name; duplicate names resolve to the lowest id" do
+    add_record("item", 2160, "roseli-berry")
+    add_record("item", 723, "roseli-berry")
+
+    assert_equal 723, PokeapiRecord.lookup("item", "Roseli-Berry").pokeapi_id
+    assert_equal 2160, PokeapiRecord.lookup("item", "2160").pokeapi_id
+    assert_nil PokeapiRecord.lookup("item", "missing")
+    assert_nil PokeapiRecord.lookup("move", "723")
+  end
+
+  test "validates the resource name" do
+    record = PokeapiRecord.new(resource: "digimon", name: "agumon", pokeapi_id: 1, body: "{}")
+    assert_not record.valid?
+    assert_includes record.errors.attribute_names, :resource
+  end
 end

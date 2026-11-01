@@ -94,4 +94,36 @@ class PokeapiControllerTest < ActionDispatch::IntegrationTest
     get "/api/pokemon", params: { offset: -1 }
     assert_response :bad_request
   end
+
+  test "list pages link back and forward" do
+    get "/api/pokemon", params: { limit: 1, offset: 1 }
+
+    json = response.parsed_body
+    assert_equal ["pikachu"], json["results"].pluck("name")
+    assert_equal "http://www.example.com/api/pokemon?offset=0&limit=1", json["previous"]
+    assert_equal "http://www.example.com/api/pokemon?offset=2&limit=1", json["next"]
+
+    get "/api/pokemon", params: { limit: 2, offset: 2 }
+    assert_nil response.parsed_body["next"]
+  end
+
+  test "list defaults to 20 and caps the limit" do
+    get "/api/pokemon"
+    assert_equal 3, response.parsed_body["results"].size
+
+    get "/api/pokemon", params: { limit: 100_001 }
+    assert_response :bad_request
+  end
+
+  test "an un-imported resource's list is a 404 with the import hint" do
+    get "/api/types"
+    assert_response :not_found
+    assert_match "pokeapi:import RESOURCES=types", response.parsed_body["error"]
+  end
+
+  test "responses are publicly cacheable JSON" do
+    get "/api/pokemon/all"
+    assert_equal "application/json", response.media_type
+    assert_match "public", response.headers["Cache-Control"]
+  end
 end

@@ -46,18 +46,19 @@ export interface PokemonRow {
 }
 
 export function toPokemonRow(p: PokemonDetail): PokemonRow {
+  const stats = p.stats ?? [];
   const stat = (name: string) =>
-    p.stats.find((s) => s.stat.name === name)?.base_stat ?? null;
+    stats.find((s) => s.stat.name === name)?.base_stat ?? null;
   return {
     id: p.id,
     name: p.name,
     sprite: localSprite(p.sprites?.front_default),
     species: p.species?.name ?? "",
-    types: [...p.types]
+    types: [...(p.types ?? [])]
       .sort((a, b) => a.slot - b.slot)
       .map((t) => t.type.name)
       .join(", "),
-    abilities: [...p.abilities]
+    abilities: [...(p.abilities ?? [])]
       .sort((a, b) => a.slot - b.slot)
       .map((a) => (a.is_hidden ? `${a.ability.name} (hidden)` : a.ability.name))
       .join(", "),
@@ -70,7 +71,7 @@ export function toPokemonRow(p: PokemonDetail): PokemonRow {
     special_attack: stat("special-attack"),
     special_defense: stat("special-defense"),
     speed: stat("speed"),
-    total: p.stats.reduce((sum, s) => sum + s.base_stat, 0),
+    total: stats.reduce((sum, s) => sum + s.base_stat, 0),
     move_count: p.moves_count ?? 0,
     is_default: p.is_default,
   };

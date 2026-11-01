@@ -1,3 +1,12 @@
+# Coverage: COVERAGE=1 bin/rails test (HTML report in coverage/).
+if ENV["COVERAGE"]
+  require "simplecov"
+  SimpleCov.start "rails" do
+    enable_coverage :branch
+    add_filter %w[/bin/ /db/ /test/ /config/]
+  end
+end
+
 ENV["RAILS_ENV"] ||= "test"
 require_relative "../config/environment"
 require "rails/test_help"

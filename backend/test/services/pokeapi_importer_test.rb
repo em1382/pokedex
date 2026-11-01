@@ -69,4 +69,61 @@ class PokeapiImporterTest < ActiveSupport::TestCase
     assert_requested png, times: 1
     assert_equal "PNG", PokeapiSprite.find_by!(path: "pokemon/25.png").data
   end
+
+  test "rejects unknown resources" do
+    assert_raises(ArgumentError) { PokeapiImporter.new(delay: 0).import("digimon") }
+  end
+
+  test "a failed list request is an error" do
+    stub_request(:get, "#{BASE}/item/?limit=100000").to_return(status: 404, body: "Not Found")
+    assert_raises(PokeapiClient::UpstreamError) { PokeapiImporter.new(delay: 0).import("item") }
+  end
+
+  test "upstream errors and bad payloads fail that record only, with a log line" do
+    stub_list("type", [["fire", 10], ["water", 11], ["grass", 12], ["rock", 13]])
+    stub_detail("type", "fire", { id: 10, name: "fire" })
+    stub_request(:get, "#{BASE}/type/water/").to_return(status: 500)
+    stub_request(:get, "#{BASE}/type/grass/").to_return(status: 200, body: "not json")
+    stub_detail("type", "rock", { name: "rock" }) # no id
+
+    log = []
+    result = PokeapiImporter.new(delay: 0, log: ->(msg) { log << msg }).import("type")
+
+    assert_equal 1, result.imported
+    assert_equal %w[water grass rock], result.failed
+    assert_equal [10], PokeapiRecord.of("type").pluck(:pokeapi_id)
+    assert(log.any? { _1.start_with?("type/water:") })
+    assert_equal "type: 4/4", log.last
+  end
+
+  test "counts sprites missing upstream and keeps going after errors" do
+    urls = %w[pokemon/1.png pokemon/2.png pokemon/3.png].map { PokeapiSprite::UPSTREAM_PREFIX + _1 }
+    urls.each_with_index { |url, i| add_record("pokemon", i + 1, "p#{i}", sprites: { front_default: url }) }
+    add_record("pokemon", 4, "elsewhere", sprites: { front_default: "https://example.com/x.png" }) # not ours
+    stub_request(:get, urls[0]).to_return(status: 200, body: "PNG")
+    stub_request(:get, urls[1]).to_return(status: 404)
+    stub_request(:get, urls[2]).to_return(status: 500)
+
+    log = []
+    downloaded, missing = PokeapiImporter.new(delay: 0, log: ->(msg) { log << msg }).import_sprites("pokemon")
+
+    assert_equal [1, 2], [downloaded, missing]
+    assert_equal ["pokemon/1.png"], PokeapiSprite.pluck(:path)
+    assert(log.any? { _1.include?("pokemon/3.png") })
+    assert_not_requested :get, "https://example.com/x.png"
+  end
+
+  test "resources without grid sprites have nothing to download" do
+    assert_equal [0, 0], PokeapiImporter.new(delay: 0).import_sprites("move")
+  end
+
+  test "a batch where every record fails writes nothing" do
+    stub_list("move", [["gone", 1]])
+    stub_detail("move", "gone", "Not Found", status: 404)
+
+    result = PokeapiImporter.new(delay: 0).import("move")
+
+    assert_equal [0, ["gone"]], [result.imported, result.failed]
+    assert_equal 0, PokeapiRecord.of("move").count
+  end
 end

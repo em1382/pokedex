@@ -8,12 +8,15 @@
     "dev:web": "pnpm --filter frontend dev",
     "import": "cd backend && bin/rails pokeapi:import",
     "import:status": "cd backend && bin/rails pokeapi:status",
-    "test": "pnpm test:api && pnpm --filter frontend lint && pnpm --filter frontend typecheck",
+    "test": "pnpm test:api && pnpm test:web",
     "test:api": "cd backend && bin/rails test",
-    "build": "pnpm --filter frontend build"
+    "build": "pnpm --filter frontend build",
+    "test:web": "pnpm --filter frontend lint && pnpm --filter frontend typecheck && pnpm --filter frontend test",
+    "coverage": "cd backend && COVERAGE=1 bin/rails test && cd .. && pnpm --filter frontend test:coverage"
   },
   "devDependencies": {
     "concurrently": "^9.2.1"
   },
-  "packageManager": "pnpm@12.14.0"
+  "packageManager": "pnpm@12.14.0",
+  "license": "MIT"
 }
