@@ -1,9 +1,26 @@
+# Bundler config / locally installed gems.
 /.bundle
+/vendor/bundle
+
+# Environment files (may contain secrets).
+/.env*
+!/.env.example
+
+# Logs and temp files, keeping the .keep placeholders.
 /log/*
 /tmp/*
-/storage/*
 !/log/.keep
 !/tmp/.keep
+
+# Local data: SQLite databases (incl. -wal/-shm) and the PokeAPI HTTP cache.
+# Rebuild with `bin/rails db:prepare && bin/rails pokeapi:import`.
+/storage/*
 !/storage/.keep
+
+# Credential keys (master.key and per-environment keys such as production.key).
+/config/*.key
+
+# Precompiled assets, coverage, debugger history.
+/public/assets
+/coverage
 .byebug_history
-/config/master.key
