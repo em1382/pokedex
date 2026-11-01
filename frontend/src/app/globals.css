@@ -1,0 +1,12 @@
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+/* Full-height column: nav bar, then <main> taking the remaining space. */
+body {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
