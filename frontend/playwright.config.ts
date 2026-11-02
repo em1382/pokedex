@@ -1,3 +1,5 @@
+import { availableParallelism } from "node:os";
+
 import { defineConfig, devices } from "@playwright/test";
 
 // End-to-end tests run against a production build of the frontend and the
@@ -12,6 +14,9 @@ const CI = !!process.env.CI;
 export default defineConfig({
   testDir: "./e2e",
   fullyParallel: true,
+  // Playwright's default (half the CPUs) counts the host's CPUs even in a container
+  // with a CPU limit, which overloads it; availableParallelism respects the limit.
+  workers: Math.max(1, Math.floor(availableParallelism() / 2)),
   forbidOnly: CI,
   reporter: CI ? [["github"], ["html", { open: "never" }]] : "list",
   use: {
