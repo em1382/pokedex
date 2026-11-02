@@ -28,7 +28,8 @@ export function project(doc: Doc, { fields, counts = [], english = [] }: Project
     });
     dst[keys.at(-1)!] = src === undefined ? null : src;
   }
-  for (const key of counts) out[`${key}_count`] = (doc[key] as unknown[] | undefined)?.length ?? null;
+  for (const key of counts)
+    out[`${key}_count`] = (doc[key] as unknown[] | undefined)?.length ?? null;
   for (const key of english) {
     const entries = (doc[key] as { language?: { name: string } }[] | undefined) ?? [];
     out[key] = entries.filter((e) => e.language?.name === "en").slice(0, 1);
@@ -45,9 +46,15 @@ export const pokemonDoc: Doc = {
   is_default: true,
   order: 35,
   species: res("pikachu", "pokemon-species/25"),
-  sprites: { front_default: `${SPRITE_BASE}pokemon/25.png`, back_default: `${SPRITE_BASE}pokemon/back/25.png` },
+  sprites: {
+    front_default: `${SPRITE_BASE}pokemon/25.png`,
+    back_default: `${SPRITE_BASE}pokemon/back/25.png`,
+  },
   // Deliberately out of slot order.
-  types: [{ slot: 2, type: res("fairy") }, { slot: 1, type: res("electric") }],
+  types: [
+    { slot: 2, type: res("fairy") },
+    { slot: 1, type: res("electric") },
+  ],
   abilities: [
     { slot: 3, is_hidden: true, ability: res("lightning-rod") },
     { slot: 1, is_hidden: false, ability: res("static") },
@@ -98,7 +105,11 @@ export const abilityDoc: Doc = {
   generation: res("generation-iii"),
   effect_entries: [], // no effect text → falls back to flavor text
   flavor_text_entries: [
-    { flavor_text: "Contact may\nparalyze the foe.", language: en, version_group: res("ruby-sapphire") },
+    {
+      flavor_text: "Contact may\nparalyze the foe.",
+      language: en,
+      version_group: res("ruby-sapphire"),
+    },
   ],
   pokemon: [
     { is_hidden: false, pokemon: res("pikachu") },
@@ -117,12 +128,29 @@ export const itemDoc: Doc = {
   attributes: [res("countable"), res("consumable")],
   sprites: { default: `${SPRITE_BASE}items/master-ball.png` },
   prices: [
-    { purchase_price: 0, sell_price: 0, currency: res("poke-dollar"), version_group: res("red-blue") },
-    { purchase_price: 1200, sell_price: 600, currency: res("poke-dollar"), version_group: res("x-y") },
+    {
+      purchase_price: 0,
+      sell_price: 0,
+      currency: res("poke-dollar"),
+      version_group: res("red-blue"),
+    },
+    {
+      purchase_price: 1200,
+      sell_price: 600,
+      currency: res("poke-dollar"),
+      version_group: res("x-y"),
+    },
     // Newest version group lists no price; the mapper should skip it.
-    { purchase_price: null, sell_price: null, currency: res("poke-dollar"), version_group: res("scarlet-violet") },
+    {
+      purchase_price: null,
+      sell_price: null,
+      currency: res("poke-dollar"),
+      version_group: res("scarlet-violet"),
+    },
   ],
-  effect_entries: [{ effect: "Long.", short_effect: "Catches a wild Pokémon every time.", language: en }],
+  effect_entries: [
+    { effect: "Long.", short_effect: "Catches a wild Pokémon every time.", language: en },
+  ],
   flavor_text_entries: [{ text: "ignored", language: en }],
   held_by_pokemon: [],
 };
@@ -140,6 +168,9 @@ export const typeDoc: Doc = {
     no_damage_to: [res("ground")],
     no_damage_from: [],
   },
-  pokemon: [{ slot: 1, pokemon: res("pikachu") }, { slot: 1, pokemon: res("raichu") }],
+  pokemon: [
+    { slot: 1, pokemon: res("pikachu") },
+    { slot: 1, pokemon: res("raichu") },
+  ],
   moves: [res("thunder"), res("thunderbolt"), res("spark"), res("discharge")],
 };

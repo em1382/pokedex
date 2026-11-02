@@ -27,7 +27,7 @@ class PokeapiController < ApplicationController
     render json: {
       count: count,
       next: offset + limit < count ? page_url(offset + limit, limit) : nil,
-      previous: offset.positive? ? page_url([offset - limit, 0].max, limit) : nil,
+      previous: offset.positive? ? page_url([ offset - limit, 0 ].max, limit) : nil,
       results: results
     }
   end

@@ -74,12 +74,12 @@ class PokeapiClient
   # Read-through cache: 200s for SUCCESS_TTL, 404s for NOT_FOUND_TTL. Returns [entry, cache_hit].
   def self.cached(key)
     if (entry = Rails.cache.read(key))
-      return [entry.key?(:body) ? entry.merge(body: utf8(entry[:body])) : entry, true]
+      return [ entry.key?(:body) ? entry.merge(body: utf8(entry[:body])) : entry, true ]
     end
 
     entry = yield
     Rails.cache.write(key, entry, expires_in: entry[:status] == 200 ? SUCCESS_TTL : NOT_FOUND_TTL)
-    [entry, false]
+    [ entry, false ]
   end
 
   # GET with retries on 429/5xx and network errors; returns a 200 or 404 response.
@@ -105,7 +105,7 @@ class PokeapiClient
 
   def self.backoff(attempt, retry_after)
     seconds = Integer(retry_after.to_s, 10) if retry_after.to_s.match?(/\A\d+\z/)
-    [seconds || BACKOFF_BASE * (2**(attempt - 1)), MAX_BACKOFF].min
+    [ seconds || BACKOFF_BASE * (2**(attempt - 1)), MAX_BACKOFF ].min
   end
 
   # Net::HTTP hands back ASCII-8BIT; PokeAPI JSON is UTF-8.

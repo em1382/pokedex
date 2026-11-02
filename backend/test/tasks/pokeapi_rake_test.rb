@@ -20,7 +20,7 @@ class PokeapiRakeTest < ActiveSupport::TestCase
   # Runs a task with ENV overrides; returns [stdout+stderr, SystemExit or nil].
   def run_task(name, env = {})
     Rake::Task[name].reenable
-    saved = env.keys.to_h { [_1, ENV[_1]] }
+    saved = env.keys.to_h { [ _1, ENV[_1] ] }
     env.each { |k, v| ENV[k] = v }
     exit = nil
     output = capture_io do
@@ -28,14 +28,14 @@ class PokeapiRakeTest < ActiveSupport::TestCase
     rescue SystemExit => e
       exit = e
     end.join
-    [output, exit]
+    [ output, exit ]
   ensure
     saved.each { |k, v| ENV[k] = v }
   end
 
   def stub_types(fire_status:)
     stub_request(:get, "#{BASE}/type/?limit=100000")
-      .to_return(status: 200, body: { results: [{ name: "fire", url: "#{BASE}/type/10/" }] }.to_json)
+      .to_return(status: 200, body: { results: [ { name: "fire", url: "#{BASE}/type/10/" } ] }.to_json)
     stub_request(:get, "#{BASE}/type/fire/").to_return(status: fire_status, body: { id: 10, name: "fire" }.to_json)
   end
 
@@ -70,7 +70,7 @@ class PokeapiRakeTest < ActiveSupport::TestCase
     assert_nil exit
     assert_match "Wrote #{file}", output
     copy = SQLite3::Database.new(file)
-    assert_equal [["fire"]], copy.execute("SELECT name FROM pokeapi_records")
+    assert_equal [ [ "fire" ] ], copy.execute("SELECT name FROM pokeapi_records")
     assert_not File.exist?("#{file}-wal")
   ensure
     copy&.close
@@ -135,7 +135,7 @@ class PokeapiRakeTest < ActiveSupport::TestCase
   test "a clean sprite import reports no failures and passes STRICT" do
     sprite = "#{PokeapiSprite::UPSTREAM_PREFIX}items/a.png"
     stub_request(:get, "#{BASE}/item/?limit=100000")
-      .to_return(status: 200, body: { results: [{ name: "a", url: "#{BASE}/item/1/" }] }.to_json)
+      .to_return(status: 200, body: { results: [ { name: "a", url: "#{BASE}/item/1/" } ] }.to_json)
     stub_request(:get, "#{BASE}/item/a/").to_return(status: 200, body: { id: 1, name: "a", sprites: { default: sprite } }.to_json)
     stub_request(:get, sprite).to_return(status: 200, body: "PNG", headers: { "Content-Type" => "image/png" })
 

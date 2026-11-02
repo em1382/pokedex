@@ -7,7 +7,12 @@ import NavBar from "@/components/NavBar";
 import Providers from "@/components/Providers";
 import RootLayout, { metadata } from "./layout";
 
-type El = ReactElement<{ children?: React.ReactNode; lang?: string; component?: string; sx?: object }>;
+type El = ReactElement<{
+  children?: React.ReactNode;
+  lang?: string;
+  component?: string;
+  sx?: object;
+}>;
 const kids = (el: El) => [el.props.children].flat() as El[];
 
 describe("RootLayout", () => {

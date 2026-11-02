@@ -55,7 +55,10 @@ describe("withEllipsis", () => {
 
   it("gives text and number columns the ellipsis cell", () => {
     render(<>{name.renderCell!(params("pikachu"))}</>);
-    expect(screen.getByText("pikachu")).toHaveStyle({ textOverflow: "ellipsis", whiteSpace: "nowrap" });
+    expect(screen.getByText("pikachu")).toHaveStyle({
+      textOverflow: "ellipsis",
+      whiteSpace: "nowrap",
+    });
   });
 
   it("shows the formatted value (e.g. 1,000) rather than the raw one", () => {

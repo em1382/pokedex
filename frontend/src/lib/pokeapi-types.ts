@@ -12,7 +12,9 @@ export interface VerboseEffect {
 }
 
 /** The English entry of a localized array. */
-export function english<T extends { language: NamedAPIResource }>(entries: T[] | undefined | null): T | undefined {
+export function english<T extends { language: NamedAPIResource }>(
+  entries: T[] | undefined | null,
+): T | undefined {
   return entries?.find((e) => e.language.name === "en");
 }
 

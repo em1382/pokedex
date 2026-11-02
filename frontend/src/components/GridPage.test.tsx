@@ -72,7 +72,9 @@ describe("GridPage", () => {
   });
 
   it("shows the backend's error message instead of the grid", async () => {
-    loadRows.mockRejectedValue(new BackendError("No items data imported. Run: bin/rails pokeapi:import", 404));
+    loadRows.mockRejectedValue(
+      new BackendError("No items data imported. Run: bin/rails pokeapi:import", 404),
+    );
 
     render(<>{await content("item")}</>);
 

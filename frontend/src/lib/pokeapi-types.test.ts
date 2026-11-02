@@ -6,7 +6,10 @@ const lang = (name: string) => ({ name, url: `https://pokeapi.co/api/v2/language
 
 describe("english", () => {
   it("picks the English entry", () => {
-    const entries = [{ text: "ja", language: lang("ja") }, { text: "en", language: lang("en") }];
+    const entries = [
+      { text: "ja", language: lang("ja") },
+      { text: "en", language: lang("en") },
+    ];
     expect(english(entries)?.text).toBe("en");
   });
 
@@ -23,7 +26,12 @@ describe("english", () => {
 
 describe("names", () => {
   it("joins resource names", () => {
-    expect(names([{ name: "a", url: "" }, { name: "b", url: "" }])).toBe("a, b");
+    expect(
+      names([
+        { name: "a", url: "" },
+        { name: "b", url: "" },
+      ]),
+    ).toBe("a, b");
   });
 
   it("is empty for missing lists", () => {

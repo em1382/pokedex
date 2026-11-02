@@ -20,7 +20,9 @@ vi.mock("@mui/x-data-grid", async (importOriginal) => ({
 
 // Like Next, useSearchParams follows the browser URL, including our own
 // replaceState writes (Next re-renders on those; tests call rerender()).
-vi.mock("next/navigation", () => ({ useSearchParams: () => new URLSearchParams(window.location.search) }));
+vi.mock("next/navigation", () => ({
+  useSearchParams: () => new URLSearchParams(window.location.search),
+}));
 
 /** Navigate to /moves?<search>. */
 function visit(search: string) {
@@ -82,7 +84,10 @@ describe("LoadingGrid", () => {
     render(<LoadingGrid slug="move" />);
     expect(props.loading).toBe(true);
     expect(props.rows).toEqual([]);
-    expect(props.slotProps?.loadingOverlay).toEqual({ variant: "skeleton", noRowsVariant: "skeleton" });
+    expect(props.slotProps?.loadingOverlay).toEqual({
+      variant: "skeleton",
+      noRowsVariant: "skeleton",
+    });
     expect(props.columns.map((c) => c.field)).toEqual(COLUMNS.move.map((c) => c.field));
   });
 
@@ -107,7 +112,9 @@ describe("ResourceGrid URL state", () => {
 
     expect(props.paginationModel).toEqual({ page: 1, pageSize: 25 });
     expect(props.sortModel).toEqual([{ field: "power", sort: "desc" }]);
-    expect(props.filterModel?.items).toEqual([{ id: 1, field: "type", operator: "equals", value: "fire" }]);
+    expect(props.filterModel?.items).toEqual([
+      { id: 1, field: "type", operator: "equals", value: "fire" },
+    ]);
     expect(props.columnVisibilityModel).toEqual({ effect: false });
   });
 

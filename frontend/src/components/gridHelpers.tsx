@@ -41,7 +41,9 @@ export function spriteColumn<R extends GridValidRowModel>(field: string): GridCo
  * Give every column without its own renderer a single-line ellipsis cell with
  * a tooltip. Booleans keep the grid's check/cross icons.
  */
-export function withEllipsis<R extends GridValidRowModel>(columns: GridColDef<R>[]): GridColDef<R>[] {
+export function withEllipsis<R extends GridValidRowModel>(
+  columns: GridColDef<R>[],
+): GridColDef<R>[] {
   return columns.map((col) =>
     col.renderCell || col.type === "boolean"
       ? col

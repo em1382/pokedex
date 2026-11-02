@@ -28,7 +28,7 @@ class PokeapiProjection
 
   # [sql_fragment, binds]
   def to_sql
-    return ["body", []] if full?
+    return [ "body", [] ] if full?
 
     binds = []
     parts = node_sql(tree, [], binds)
@@ -36,7 +36,7 @@ class PokeapiProjection
       parts << "?, json_array_length(body, ?)"
       binds.push("#{key}_count", "$.#{key}")
     end
-    ["json_object(#{parts.join(', ')})", binds]
+    [ "json_object(#{parts.join(', ')})", binds ]
   end
 
   private
@@ -76,7 +76,7 @@ class PokeapiProjection
 
   def node_sql(node, prefix, binds)
     node.map do |key, child|
-      path = prefix + [key]
+      path = prefix + [ key ]
       binds << key
       if child == true && prefix.empty? && english.include?(key)
         # [first English entry] (or []); json_each's key is the array index.

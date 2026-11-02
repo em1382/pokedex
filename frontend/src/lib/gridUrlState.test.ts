@@ -35,7 +35,11 @@ describe("parseGridState", () => {
   });
 
   it("reads a full view", () => {
-    expect(parse("filter=type&op=equals&value=fire&sort=-power&page=2&pageSize=50&q=fire%20punch&hide=effect,sprite")).toEqual({
+    expect(
+      parse(
+        "filter=type&op=equals&value=fire&sort=-power&page=2&pageSize=50&q=fire%20punch&hide=effect,sprite",
+      ),
+    ).toEqual({
       paginationModel: { page: 1, pageSize: 50 },
       sortModel: [{ field: "power", sort: "desc" }],
       filterModel: {
@@ -57,11 +61,12 @@ describe("parseGridState", () => {
   });
 
   it("reads repeated values for isAnyOf", () => {
-    expect(parse("filter=power&op=isAnyOf&value=40&value=90").filterModel.items[0].value).toEqual([40, 90]);
-    expect(parse("filter=type&op=isAnyOf&value=fire&value=water").filterModel.items[0].value).toEqual([
-      "fire",
-      "water",
+    expect(parse("filter=power&op=isAnyOf&value=40&value=90").filterModel.items[0].value).toEqual([
+      40, 90,
     ]);
+    expect(
+      parse("filter=type&op=isAnyOf&value=fire&value=water").filterModel.items[0].value,
+    ).toEqual(["fire", "water"]);
   });
 
   it("needs no value for isEmpty / isNotEmpty", () => {
@@ -103,7 +108,9 @@ describe("parseGridState", () => {
   });
 
   it("drops non-numeric entries from a numeric isAnyOf", () => {
-    expect(parse("filter=power&op=isAnyOf&value=x&value=50").filterModel.items[0].value).toEqual([50]);
+    expect(parse("filter=power&op=isAnyOf&value=x&value=50").filterModel.items[0].value).toEqual([
+      50,
+    ]);
     expect(parse("filter=power&op=isAnyOf&value=x").filterModel.items).toEqual([]);
   });
 });
@@ -117,7 +124,10 @@ describe("serializeGridState", () => {
     const qs = serialize({
       paginationModel: { page: 2, pageSize: 100 },
       sortModel: [{ field: "name", sort: "asc" }],
-      filterModel: { items: [{ id: 1, field: "type", operator: "contains", value: "ire" }], quickFilterValues: ["punch"] },
+      filterModel: {
+        items: [{ id: 1, field: "type", operator: "contains", value: "ire" }],
+        quickFilterValues: ["punch"],
+      },
       columnVisibilityModel: { effect: false, name: true },
     });
     expect(Object.fromEntries(new URLSearchParams(qs))).toEqual({
@@ -133,18 +143,30 @@ describe("serializeGridState", () => {
   });
 
   it("skips filter items still waiting for a value", () => {
-    const state = { ...DEFAULT, filterModel: { items: [{ id: 1, field: "type", operator: "equals" }] } };
+    const state = {
+      ...DEFAULT,
+      filterModel: { items: [{ id: 1, field: "type", operator: "equals" }] },
+    };
     expect(serialize(state)).toBe("");
-    const empty = { ...DEFAULT, filterModel: { items: [{ id: 1, field: "type", operator: "isAnyOf", value: [] }] } };
+    const empty = {
+      ...DEFAULT,
+      filterModel: { items: [{ id: 1, field: "type", operator: "isAnyOf", value: [] }] },
+    };
     expect(serialize(empty)).toBe("");
   });
 
   it("writes valueless operators and multi-value filters", () => {
-    expect(serialize({ ...DEFAULT, filterModel: { items: [{ id: 1, field: "effect", operator: "isNotEmpty" }] } })).toBe(
-      "filter=effect&op=isNotEmpty",
-    );
     expect(
-      serialize({ ...DEFAULT, filterModel: { items: [{ id: 1, field: "power", operator: "isAnyOf", value: [40, 90] }] } }),
+      serialize({
+        ...DEFAULT,
+        filterModel: { items: [{ id: 1, field: "effect", operator: "isNotEmpty" }] },
+      }),
+    ).toBe("filter=effect&op=isNotEmpty");
+    expect(
+      serialize({
+        ...DEFAULT,
+        filterModel: { items: [{ id: 1, field: "power", operator: "isAnyOf", value: [40, 90] }] },
+      }),
     ).toBe("filter=power&op=isAnyOf&value=40&value=90");
   });
 
@@ -168,19 +190,38 @@ describe("round trip", () => {
 describe("filterOperatorsFor", () => {
   it("offers MUI's operators for the column type", () => {
     expect(filterOperatorsFor({ field: "a" })).toContain("contains");
-    expect(filterOperatorsFor({ field: "a", type: "number" })).toEqual(["=", "!=", ">", ">=", "<", "<=", "isEmpty", "isNotEmpty", "isAnyOf"]);
+    expect(filterOperatorsFor({ field: "a", type: "number" })).toEqual([
+      "=",
+      "!=",
+      ">",
+      ">=",
+      "<",
+      "<=",
+      "isEmpty",
+      "isNotEmpty",
+      "isAnyOf",
+    ]);
     expect(filterOperatorsFor({ field: "a", type: "boolean" })).toEqual(["is"]);
-    expect(filterOperatorsFor({ field: "a", type: "singleSelect" })).toEqual(["is", "not", "isAnyOf"]);
+    expect(filterOperatorsFor({ field: "a", type: "singleSelect" })).toEqual([
+      "is",
+      "not",
+      "isAnyOf",
+    ]);
     expect(filterOperatorsFor({ field: "a", type: "date" })).toContain("after");
   });
 
   it("prefers a column's own operators", () => {
-    const column = { field: "a", filterOperators: [{ value: "custom", getApplyFilterFn: () => null }] };
+    const column = {
+      field: "a",
+      filterOperators: [{ value: "custom", getApplyFilterFn: () => null }],
+    };
     expect(filterOperatorsFor(column)).toEqual(["custom"]);
     const parsed = parseGridState(new URLSearchParams("filter=a&op=custom&value=x"), {
       ...options,
       columns: [column],
     });
-    expect(parsed.filterModel.items).toEqual([{ id: 1, field: "a", operator: "custom", value: "x" }]);
+    expect(parsed.filterModel.items).toEqual([
+      { id: 1, field: "a", operator: "custom", value: "x" },
+    ]);
   });
 });

@@ -5,7 +5,9 @@ import ResourceGrid from "./ResourceGrid";
 
 // The real MIT DataGrid (no mock): a link with a filter operator the column
 // doesn't offer used to make the grid throw while rendering.
-vi.mock("next/navigation", () => ({ useSearchParams: () => new URLSearchParams(window.location.search) }));
+vi.mock("next/navigation", () => ({
+  useSearchParams: () => new URLSearchParams(window.location.search),
+}));
 
 const rows = [
   { id: 1, name: "pound", type: "normal", power: 40 },

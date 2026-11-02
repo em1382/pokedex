@@ -17,7 +17,7 @@ class PokeapiImporter
     def failed? = failed.any?
   end
 
-  def initialize(delay: 0.05, force: false, log: ->(_msg) {})
+  def initialize(delay: 0.05, force: false, log: ->(_msg) { })
     @delay = delay
     @force = force
     @log = log
@@ -48,7 +48,7 @@ class PokeapiImporter
   def import_sprites(resource)
     result = SpriteResult.new(downloaded: 0, cached: 0, missing: [], failed: [])
     json_path = SPRITE_PATHS[resource] or return result
-    urls = PokeapiRecord.of(resource).pluck(Arel.sql(ActiveRecord::Base.sanitize_sql_array(["body ->> ?", json_path])))
+    urls = PokeapiRecord.of(resource).pluck(Arel.sql(ActiveRecord::Base.sanitize_sql_array([ "body ->> ?", json_path ])))
     paths = urls.compact.uniq.filter_map { |url| PokeapiSprite.path_for(url) }
     todo = paths - PokeapiSprite.where(path: paths).pluck(:path)
 

@@ -67,12 +67,19 @@ export default function NavBar() {
         sx={{ display: { md: "none" } }}
       >
         <Box component="nav" sx={{ width: 233, py: fib(8) }}>
-          <Typography variant="overline" component="div" color="text.secondary" sx={{ px: fib(21) }}>
+          <Typography
+            variant="overline"
+            component="div"
+            color="text.secondary"
+            sx={{ px: fib(21) }}
+          >
             Grids
           </Typography>
           <List disablePadding>
             <WithPathname
-              render={(current) => <DrawerLinks current={current} onNavigate={() => setOpen(false)} />}
+              render={(current) => (
+                <DrawerLinks current={current} onNavigate={() => setOpen(false)} />
+              )}
             />
           </List>
         </Box>

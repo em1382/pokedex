@@ -46,7 +46,8 @@ function fromUrl(search: string, options: GridUrlOptions): UrlSync {
 /** Display columns: ellipsis cells, and the ID column always visible. */
 function useColumns(slug: ResourceSlug): GridColDef[] {
   return useMemo(
-    () => withEllipsis(COLUMNS[slug]).map((c) => (c.field === "id" ? { ...c, hideable: false } : c)),
+    () =>
+      withEllipsis(COLUMNS[slug]).map((c) => (c.field === "id" ? { ...c, hideable: false } : c)),
     [slug],
   );
 }
@@ -56,7 +57,13 @@ function useColumns(slug: ResourceSlug): GridColDef[] {
  * happen client-side — no requests on page change. The view (page, sort,
  * filter, quick search, hidden columns) lives in the URL so it can be shared.
  */
-export default function ResourceGrid({ slug, rows }: { slug: ResourceSlug; rows: { id: number }[] }) {
+export default function ResourceGrid({
+  slug,
+  rows,
+}: {
+  slug: ResourceSlug;
+  rows: { id: number }[];
+}) {
   const columns = useColumns(slug);
   const urlOptions: GridUrlOptions = useMemo(
     () => ({ columns, pageSizeOptions: PAGE_SIZE_OPTIONS, defaultPageSize: DEFAULT_PAGE_SIZE }),
@@ -73,14 +80,22 @@ export default function ResourceGrid({ slug, rows }: { slug: ResourceSlug; rows:
     const own = sync.pending.indexOf(search);
     // One of our own writes arriving: keep the view, drop it (and older writes).
     // Anything else is a navigation (a link to this grid, a shared link): adopt it.
-    setSync(own >= 0 ? { ...sync, seen: search, pending: sync.pending.slice(own + 1) } : fromUrl(search, urlOptions));
+    setSync(
+      own >= 0
+        ? { ...sync, seen: search, pending: sync.pending.slice(own + 1) }
+        : fromUrl(search, urlOptions),
+    );
   }
 
   const changeView = (patch: Partial<GridUrlState>) =>
     setSync((s) => {
       const view = { ...s.view, ...patch };
       const q = query(view);
-      return { ...s, view, pending: q === s.seen ? s.pending : [...s.pending, q].slice(-MAX_PENDING) };
+      return {
+        ...s,
+        view,
+        pending: q === s.seen ? s.pending : [...s.pending, q].slice(-MAX_PENDING),
+      };
     });
 
   // Mirror the view into the URL. replaceState (not router.replace) so the
@@ -94,14 +109,7 @@ export default function ResourceGrid({ slug, rows }: { slug: ResourceSlug; rows:
     }
   }, [current]);
 
-  return (
-    <GridFrame
-      columns={columns}
-      rows={rows}
-      view={sync.view}
-      onViewChange={changeView}
-    />
-  );
+  return <GridFrame columns={columns} rows={rows} view={sync.view} onViewChange={changeView} />;
 }
 
 const noSubscribe = () => () => {};
@@ -114,7 +122,11 @@ const noSubscribe = () => () => {};
  */
 export function LoadingGrid({ slug }: { slug: ResourceSlug }) {
   const columns = useColumns(slug);
-  const inBrowser = useSyncExternalStore(noSubscribe, () => true, () => false);
+  const inBrowser = useSyncExternalStore(
+    noSubscribe,
+    () => true,
+    () => false,
+  );
   if (!inBrowser) return <GridArea sx={{ border: 1, borderColor: "divider", borderRadius: 1 }} />;
   return <GridFrame columns={columns} rows={[]} view={DEFAULT_VIEW} loading />;
 }
@@ -149,7 +161,9 @@ function GridFrame({ columns, rows, view, onViewChange, loading = false }: Frame
         filterModel={view.filterModel}
         onFilterModelChange={(filterModel) => onViewChange?.({ filterModel })}
         columnVisibilityModel={view.columnVisibilityModel}
-        onColumnVisibilityModelChange={(columnVisibilityModel) => onViewChange?.({ columnVisibilityModel })}
+        onColumnVisibilityModelChange={(columnVisibilityModel) =>
+          onViewChange?.({ columnVisibilityModel })
+        }
         showToolbar
         loading={loading}
         slotProps={{

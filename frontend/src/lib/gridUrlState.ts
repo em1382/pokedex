@@ -58,7 +58,8 @@ const DEFAULT_OPERATORS: Record<string, () => { value: string }[]> = {
 };
 
 export function filterOperatorsFor(column: GridColDef): string[] {
-  const operators = column.filterOperators ?? (DEFAULT_OPERATORS[column.type ?? ""] ?? getGridStringOperators)();
+  const operators =
+    column.filterOperators ?? (DEFAULT_OPERATORS[column.type ?? ""] ?? getGridStringOperators)();
   return operators.map((o) => o.value);
 }
 
@@ -77,7 +78,9 @@ export function parseGridState(params: URLSearchParams, options: GridUrlOptions)
   const desc = sort.startsWith("-");
   const sortField = desc ? sort.slice(1) : sort;
   const sortable = byField.has(sortField) && byField.get(sortField)?.sortable !== false;
-  const sortModel: GridSortModel = sortable ? [{ field: sortField, sort: desc ? "desc" : "asc" }] : [];
+  const sortModel: GridSortModel = sortable
+    ? [{ field: sortField, sort: desc ? "desc" : "asc" }]
+    : [];
 
   const filterModel: GridFilterModel = { items: [] };
   const item = parseFilterItem(params, byField);
@@ -126,7 +129,11 @@ export function serializeGridState(state: GridUrlState, options: GridUrlOptions)
   if (item) {
     params.set("filter", item.field);
     params.set("op", item.operator);
-    for (const v of Array.isArray(item.value) ? item.value : item.value == null ? [] : [item.value]) {
+    for (const v of Array.isArray(item.value)
+      ? item.value
+      : item.value == null
+        ? []
+        : [item.value]) {
       params.append("value", String(v));
     }
   }
@@ -142,7 +149,9 @@ export function serializeGridState(state: GridUrlState, options: GridUrlOptions)
     params.set("pageSize", String(paginationModel.pageSize));
   }
 
-  const hidden = options.columns.map((c) => c.field).filter((f) => columnVisibilityModel[f] === false);
+  const hidden = options.columns
+    .map((c) => c.field)
+    .filter((f) => columnVisibilityModel[f] === false);
   if (hidden.length) params.set("hide", hidden.join(","));
 
   return params.toString();

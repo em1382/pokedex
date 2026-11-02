@@ -16,7 +16,7 @@ class PokeapiImporterTest < ActiveSupport::TestCase
   end
 
   test "imports list + details, keyed by id even when names repeat" do
-    stub_list("item", [["potion", 17], ["roseli-berry", 723], ["roseli-berry", 2160]])
+    stub_list("item", [ [ "potion", 17 ], [ "roseli-berry", 723 ], [ "roseli-berry", 2160 ] ])
     stub_detail("item", "potion", { id: 17, name: "potion" })
     stub_detail("item", 723, { id: 723, name: "roseli-berry" })
     stub_detail("item", 2160, { id: 2160, name: "roseli-berry" })
@@ -24,12 +24,12 @@ class PokeapiImporterTest < ActiveSupport::TestCase
     result = PokeapiImporter.new(delay: 0).import("item")
 
     assert_equal 3, result.imported
-    assert_equal [17, 723, 2160], PokeapiRecord.of("item").order(:pokeapi_id).pluck(:pokeapi_id)
+    assert_equal [ 17, 723, 2160 ], PokeapiRecord.of("item").order(:pokeapi_id).pluck(:pokeapi_id)
     assert_equal 723, PokeapiRecord.lookup("item", "roseli-berry").pokeapi_id
   end
 
   test "skips records already present and reuses the HTTP cache" do
-    list = stub_list("type", [["fire", 10], ["water", 11]])
+    list = stub_list("type", [ [ "fire", 10 ], [ "water", 11 ] ])
     fire = stub_detail("type", "fire", { id: 10, name: "fire" })
     water = stub_detail("type", "water", { id: 11, name: "water" })
     add_record("type", 10, "fire")
@@ -46,14 +46,14 @@ class PokeapiImporterTest < ActiveSupport::TestCase
   end
 
   test "records missing upstream are reported, not fatal" do
-    stub_list("move", [["pound", 1], ["ghost-move", 9999]])
+    stub_list("move", [ [ "pound", 1 ], [ "ghost-move", 9999 ] ])
     stub_detail("move", "pound", { id: 1, name: "pound" })
     stub_detail("move", "ghost-move", "Not Found", status: 404)
 
     result = PokeapiImporter.new(delay: 0).import("move")
 
     assert_equal 1, result.imported
-    assert_equal ["ghost-move"], result.failed
+    assert_equal [ "ghost-move" ], result.failed
   end
 
   test "downloads sprites referenced by imported records once" do
@@ -66,8 +66,8 @@ class PokeapiImporterTest < ActiveSupport::TestCase
     first = importer.import_sprites("pokemon")
     second = importer.import_sprites("pokemon")
 
-    assert_equal [1, 0, [], []], first.to_a
-    assert_equal [0, 0, [], []], second.to_a
+    assert_equal [ 1, 0, [], [] ], first.to_a
+    assert_equal [ 0, 0, [], [] ], second.to_a
     assert_requested png, times: 1
     assert_equal "PNG", PokeapiSprite.find_by!(path: "pokemon/25.png").data
   end
@@ -81,7 +81,7 @@ class PokeapiImporterTest < ActiveSupport::TestCase
 
     result = PokeapiImporter.new(delay: 0).import_sprites("pokemon")
 
-    assert_equal [0, 1], [result.downloaded, result.cached]
+    assert_equal [ 0, 1 ], [ result.downloaded, result.cached ]
     assert_requested png, times: 1
   end
 
@@ -95,7 +95,7 @@ class PokeapiImporterTest < ActiveSupport::TestCase
   end
 
   test "upstream errors and bad payloads fail that record only, with a log line" do
-    stub_list("type", [["fire", 10], ["water", 11], ["grass", 12], ["rock", 13]])
+    stub_list("type", [ [ "fire", 10 ], [ "water", 11 ], [ "grass", 12 ], [ "rock", 13 ] ])
     stub_detail("type", "fire", { id: 10, name: "fire" })
     stub_request(:get, "#{BASE}/type/water/").to_return(status: 500)
     stub_request(:get, "#{BASE}/type/grass/").to_return(status: 200, body: "not json")
@@ -106,7 +106,7 @@ class PokeapiImporterTest < ActiveSupport::TestCase
 
     assert_equal 1, result.imported
     assert_equal %w[water grass rock], result.failed
-    assert_equal [10], PokeapiRecord.of("type").pluck(:pokeapi_id)
+    assert_equal [ 10 ], PokeapiRecord.of("type").pluck(:pokeapi_id)
     assert(log.any? { _1.start_with?("type/water:") })
     assert_equal "type: 4/4", log.last
   end
@@ -123,30 +123,30 @@ class PokeapiImporterTest < ActiveSupport::TestCase
     result = PokeapiImporter.new(delay: 0, log: ->(msg) { log << msg }).import_sprites("pokemon")
 
     assert_equal 1, result.downloaded
-    assert_equal ["pokemon/2.png"], result.missing
-    assert_equal ["pokemon/3.png"], result.failed
+    assert_equal [ "pokemon/2.png" ], result.missing
+    assert_equal [ "pokemon/3.png" ], result.failed
     assert_predicate result, :failed?
-    assert_equal ["pokemon/1.png"], PokeapiSprite.pluck(:path)
+    assert_equal [ "pokemon/1.png" ], PokeapiSprite.pluck(:path)
     assert(log.any? { _1.include?("pokemon/3.png") })
     assert_not_requested :get, "https://example.com/x.png"
   end
 
   test "resources without grid sprites have nothing to download" do
-    assert_equal [0, 0, [], []], PokeapiImporter.new(delay: 0).import_sprites("move").to_a
+    assert_equal [ 0, 0, [], [] ], PokeapiImporter.new(delay: 0).import_sprites("move").to_a
   end
 
   test "a batch where every record fails writes nothing" do
-    stub_list("move", [["gone", 1]])
+    stub_list("move", [ [ "gone", 1 ] ])
     stub_detail("move", "gone", "Not Found", status: 404)
 
     result = PokeapiImporter.new(delay: 0).import("move")
 
-    assert_equal [0, ["gone"]], [result.imported, result.failed]
+    assert_equal [ 0, [ "gone" ] ], [ result.imported, result.failed ]
     assert_equal 0, PokeapiRecord.of("move").count
   end
 
   test "pauses after every request that reaches the network, including failures" do
-    stub_list("type", [["fire", 10], ["water", 11], ["grass", 12]])
+    stub_list("type", [ [ "fire", 10 ], [ "water", 11 ], [ "grass", 12 ] ])
     stub_detail("type", "fire", { id: 10, name: "fire" })
     stub_request(:get, "#{BASE}/type/water/").to_return(status: 500)
     stub_detail("type", "grass", { id: 12, name: "grass" })

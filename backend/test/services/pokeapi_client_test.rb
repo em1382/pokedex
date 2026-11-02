@@ -60,7 +60,7 @@ class PokeapiClientTest < ActiveSupport::TestCase
 
     assert_predicate PokeapiClient.detail("type", "fire"), :ok?
     assert_requested stub, times: 3
-    assert_equal [1, 2], @sleeps
+    assert_equal [ 1, 2 ], @sleeps
   end
 
   test "Retry-After is honoured, capped at a minute" do
@@ -73,7 +73,7 @@ class PokeapiClientTest < ActiveSupport::TestCase
 
     PokeapiClient.detail("type", "ice")
 
-    assert_equal [7, 60, 4], @sleeps
+    assert_equal [ 7, 60, 4 ], @sleeps
   end
 
   test "gives up after the last attempt, without caching the failure" do
@@ -82,7 +82,7 @@ class PokeapiClientTest < ActiveSupport::TestCase
     error = assert_raises(PokeapiClient::UpstreamError) { PokeapiClient.detail("type", "rock") }
     assert_match "503", error.message
     assert_requested stub, times: PokeapiClient::MAX_ATTEMPTS
-    assert_equal [1, 2, 4], @sleeps
+    assert_equal [ 1, 2, 4 ], @sleeps
 
     stub_request(:get, "#{BASE}/type/rock/").to_return(status: 200, body: "{}")
     assert_predicate PokeapiClient.detail("type", "rock"), :ok?
@@ -113,8 +113,8 @@ class PokeapiClientTest < ActiveSupport::TestCase
     second = PokeapiClient.image(SPRITE)
 
     assert_requested stub, times: 1
-    assert_equal ["image/png", "\x89PNG".b, false], [first.content_type, first.data, first.cache_hit]
-    assert_equal ["image/png", "\x89PNG".b, true], [second.content_type, second.data, second.cache_hit]
+    assert_equal [ "image/png", "\x89PNG".b, false ], [ first.content_type, first.data, first.cache_hit ]
+    assert_equal [ "image/png", "\x89PNG".b, true ], [ second.content_type, second.data, second.cache_hit ]
     assert_equal Encoding::BINARY, second.data.encoding
   end
 

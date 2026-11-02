@@ -1,15 +1,15 @@
 import type { Projection } from "@/lib/api";
-import {
-  clean,
-  english,
-  type NamedAPIResource,
-  type VerboseEffect,
-} from "@/lib/pokeapi-types";
+import { clean, english, type NamedAPIResource, type VerboseEffect } from "@/lib/pokeapi-types";
 
 export const abilityProjection: Projection = {
   fields: [
-    "id", "name", "is_main_series", "generation", "effect_entries",
-    "flavor_text_entries", "pokemon",
+    "id",
+    "name",
+    "is_main_series",
+    "generation",
+    "effect_entries",
+    "flavor_text_entries",
+    "pokemon",
   ],
   english: ["effect_entries", "flavor_text_entries"],
 };
@@ -42,8 +42,7 @@ export function toAbilityRow(a: AbilityDetail): AbilityRow {
     generation: a.generation?.name ?? "",
     is_main_series: a.is_main_series,
     effect: clean(
-      english(a.effect_entries)?.short_effect ??
-        english(a.flavor_text_entries)?.flavor_text,
+      english(a.effect_entries)?.short_effect ?? english(a.flavor_text_entries)?.flavor_text,
     ),
     pokemon_count: pokemon.length,
     hidden_count: pokemon.filter((p) => p.is_hidden).length,

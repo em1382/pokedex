@@ -1,6 +1,14 @@
 import { describe, expect, it } from "vitest";
 
-import { abilityDoc, itemDoc, moveDoc, pokemonDoc, project, SPRITE_BASE, typeDoc } from "../../test/fixtures";
+import {
+  abilityDoc,
+  itemDoc,
+  moveDoc,
+  pokemonDoc,
+  project,
+  SPRITE_BASE,
+  typeDoc,
+} from "../../test/fixtures";
 import { abilityProjection, toAbilityRow } from "./ability/mapper";
 import { itemProjection, toItemRow } from "./item/mapper";
 import { moveProjection, toMoveRow } from "./move/mapper";
@@ -46,7 +54,10 @@ describe("toPokemonRow", () => {
 
   it("copes with missing stats and sprites", () => {
     const sparse = toPokemonRow(
-      projected({ ...pokemonDoc, stats: [], sprites: { front_default: null }, base_experience: null }, pokemonProjection),
+      projected(
+        { ...pokemonDoc, stats: [], sprites: { front_default: null }, base_experience: null },
+        pokemonProjection,
+      ),
     );
     expect(sparse.hp).toBeNull();
     expect(sparse.total).toBe(0);
@@ -86,7 +97,10 @@ describe("toMoveRow", () => {
 
   it("handles status moves without power, accuracy or damage class", () => {
     const row = toMoveRow(
-      projected({ ...moveDoc, power: null, accuracy: null, damage_class: null, effect_chance: null }, moveProjection),
+      projected(
+        { ...moveDoc, power: null, accuracy: null, damage_class: null, effect_chance: null },
+        moveProjection,
+      ),
     );
     expect(row.power).toBeNull();
     expect(row.accuracy).toBeNull();
@@ -111,7 +125,9 @@ describe("toAbilityRow", () => {
   it("prefers the effect text when present", () => {
     const doc = {
       ...abilityDoc,
-      effect_entries: [{ effect: "x", short_effect: "Paralyzes on contact.", language: { name: "en", url: "" } }],
+      effect_entries: [
+        { effect: "x", short_effect: "Paralyzes on contact.", language: { name: "en", url: "" } },
+      ],
     };
     expect(toAbilityRow(projected(doc, abilityProjection)).effect).toBe("Paralyzes on contact.");
   });
@@ -141,7 +157,9 @@ describe("toItemRow", () => {
   });
 
   it("keeps non-PokeAPI sprite URLs as they are", () => {
-    const row = toItemRow(projected({ ...itemDoc, sprites: { default: "https://example.com/x.png" } }, itemProjection));
+    const row = toItemRow(
+      projected({ ...itemDoc, sprites: { default: "https://example.com/x.png" } }, itemProjection),
+    );
     expect(row.sprite).toBe("https://example.com/x.png");
     expect(SPRITE_BASE).toContain("raw.githubusercontent.com");
   });
@@ -166,7 +184,9 @@ describe("toTypeRow", () => {
   });
 
   it("handles types without a damage class (e.g. fairy, stellar)", () => {
-    expect(toTypeRow(projected({ ...typeDoc, move_damage_class: null }, typeProjection)).damage_class).toBe("");
+    expect(
+      toTypeRow(projected({ ...typeDoc, move_damage_class: null }, typeProjection)).damage_class,
+    ).toBe("");
   });
 });
 

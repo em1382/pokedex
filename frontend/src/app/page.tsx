@@ -17,8 +17,8 @@ export default function Home() {
         Resource directory
       </Typography>
       <Typography color="text.secondary" sx={{ mb: fib(21) }}>
-        Each grid loads every record of a PokeAPI resource and pages through it in the
-        browser. Data is served by the local Rails API from its SQLite copy of PokeAPI, so it works offline.
+        Each grid loads every record of a PokeAPI resource and pages through it in the browser. Data
+        is served by the local Rails API from its SQLite copy of PokeAPI, so it works offline.
       </Typography>
       <Grid container spacing={fib(13)}>
         {RESOURCE_SLUGS.map((slug) => {

@@ -9,10 +9,10 @@ import { RESOURCE_META, RESOURCE_SLUGS } from "@/resources/meta";
 
 // Each grid is a static route at its plural path (so unknown paths are a plain
 // 404 and every page shell is prerendered). Adding a grid means adding its page.
-const pages = import.meta.glob<{ default: () => ReactElement<{ slug: string }>; metadata: { title: string } }>(
-  "./*/page.tsx",
-  { eager: true },
-);
+const pages = import.meta.glob<{
+  default: () => ReactElement<{ slug: string }>;
+  metadata: { title: string };
+}>("./*/page.tsx", { eager: true });
 
 describe("grid routes", () => {
   it.each(RESOURCE_SLUGS)("%s has a page at its plural path rendering its grid", (slug) => {

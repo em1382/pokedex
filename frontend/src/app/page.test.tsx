@@ -8,7 +8,9 @@ import Home from "./page";
 describe("Home (resource directory)", () => {
   it("has a heading", () => {
     render(<Home />);
-    expect(screen.getByRole("heading", { level: 1, name: "Resource directory" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { level: 1, name: "Resource directory" }),
+    ).toBeInTheDocument();
   });
 
   it("shows a card per grid, linking to its plural path", () => {

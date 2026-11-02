@@ -23,7 +23,10 @@ describe("NavBar", () => {
 
   it("links the title to the directory", () => {
     render(<NavBar />);
-    expect(within(header()).getByRole("link", { name: "PokeAPI Grids" })).toHaveAttribute("href", "/");
+    expect(within(header()).getByRole("link", { name: "PokeAPI Grids" })).toHaveAttribute(
+      "href",
+      "/",
+    );
   });
 
   it("links every grid at its plural path", () => {
@@ -35,13 +38,20 @@ describe("NavBar", () => {
 
   it("marks the current page", () => {
     render(<NavBar />);
-    expect(within(header()).getByRole("link", { name: "Moves" })).toHaveAttribute("aria-current", "page");
-    expect(within(header()).getByRole("link", { name: "Items" })).not.toHaveAttribute("aria-current");
+    expect(within(header()).getByRole("link", { name: "Moves" })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+    expect(within(header()).getByRole("link", { name: "Items" })).not.toHaveAttribute(
+      "aria-current",
+    );
   });
 
   it("points the hamburger's aria-controls at the drawer, even while it's closed", () => {
     const { container } = render(<NavBar />);
-    const id = screen.getByRole("button", { name: "Open navigation" }).getAttribute("aria-controls");
+    const id = screen
+      .getByRole("button", { name: "Open navigation" })
+      .getAttribute("aria-controls");
     expect(id).toBe("nav-drawer");
     expect(container.ownerDocument.getElementById(id!)).not.toBeNull();
   });
@@ -67,7 +77,10 @@ describe("NavBar", () => {
     await userEvent.click(within(drawer()).getByRole("link", { name: "Items" }));
 
     await waitFor(() => expect(screen.queryByRole("presentation")).not.toBeInTheDocument());
-    expect(screen.getByRole("button", { name: "Open navigation" })).toHaveAttribute("aria-expanded", "false");
+    expect(screen.getByRole("button", { name: "Open navigation" })).toHaveAttribute(
+      "aria-expanded",
+      "false",
+    );
   });
 
   it("closes the drawer on Escape", async () => {

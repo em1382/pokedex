@@ -1,15 +1,20 @@
 import type { Projection } from "@/lib/api";
-import {
-  clean,
-  english,
-  type NamedAPIResource,
-  type VerboseEffect,
-} from "@/lib/pokeapi-types";
+import { clean, english, type NamedAPIResource, type VerboseEffect } from "@/lib/pokeapi-types";
 
 export const moveProjection: Projection = {
   fields: [
-    "id", "name", "accuracy", "power", "pp", "priority", "effect_chance",
-    "type", "damage_class", "target", "generation", "effect_entries",
+    "id",
+    "name",
+    "accuracy",
+    "power",
+    "pp",
+    "priority",
+    "effect_chance",
+    "type",
+    "damage_class",
+    "target",
+    "generation",
+    "effect_entries",
     "flavor_text_entries",
   ],
   counts: ["learned_by_pokemon"],
@@ -51,7 +56,8 @@ export interface MoveRow {
 }
 
 export function toMoveRow(m: MoveDetail): MoveRow {
-  const effect = english(m.effect_entries)?.short_effect ?? english(m.flavor_text_entries)?.flavor_text;
+  const effect =
+    english(m.effect_entries)?.short_effect ?? english(m.flavor_text_entries)?.flavor_text;
   return {
     id: m.id,
     name: m.name,
@@ -64,10 +70,7 @@ export function toMoveRow(m: MoveDetail): MoveRow {
     effect_chance: m.effect_chance,
     target: m.target?.name ?? "",
     generation: m.generation?.name ?? "",
-    effect: clean(effect).replace(
-      /\$effect_chance/g,
-      String(m.effect_chance ?? ""),
-    ),
+    effect: clean(effect).replace(/\$effect_chance/g, String(m.effect_chance ?? "")),
     learned_by_count: m.learned_by_pokemon_count ?? 0,
   };
 }

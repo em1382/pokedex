@@ -26,7 +26,7 @@ module ActiveSupport
     setup do
       WebMock.disable_net_connect!
       @real_sleeper = PokeapiClient.sleeper
-      PokeapiClient.sleeper = ->(_seconds) {}
+      PokeapiClient.sleeper = ->(_seconds) { }
     end
     teardown { PokeapiClient.sleeper = @real_sleeper }
 

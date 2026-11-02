@@ -17,7 +17,12 @@ afterEach(() => vi.unstubAllGlobals());
 
 describe("getResourceRows", () => {
   it("requests /api/<path>/all with the projection and maps every record", async () => {
-    const fetch = mockFetch(ok([{ id: 1, name: "a" }, { id: 2, name: "b" }]));
+    const fetch = mockFetch(
+      ok([
+        { id: 1, name: "a" },
+        { id: 2, name: "b" },
+      ]),
+    );
 
     const rows = await getResourceRows(
       "moves",
@@ -37,21 +42,31 @@ describe("getResourceRows", () => {
 
   it("asks for English-only localized arrays", async () => {
     const fetch = mockFetch(ok([]));
-    await getResourceRows("items", { fields: ["id", "effect_entries"], english: ["effect_entries"] }, (d) => d);
-    expect(new URL((fetch.mock.calls[0] as unknown as [string])[0]).searchParams.get("english")).toBe("effect_entries");
+    await getResourceRows(
+      "items",
+      { fields: ["id", "effect_entries"], english: ["effect_entries"] },
+      (d) => d,
+    );
+    expect(
+      new URL((fetch.mock.calls[0] as unknown as [string])[0]).searchParams.get("english"),
+    ).toBe("effect_entries");
   });
 
   it("omits counts when the projection has none", async () => {
     const fetch = mockFetch(ok([]));
     await getResourceRows("types", { fields: ["id"] }, (d) => d);
-    expect(new URL((fetch.mock.calls[0] as unknown as [string])[0]).searchParams.has("counts")).toBe(false);
+    expect(
+      new URL((fetch.mock.calls[0] as unknown as [string])[0]).searchParams.has("counts"),
+    ).toBe(false);
   });
 
   it("surfaces the backend's error message and status", async () => {
     mockFetch({
       ok: false,
       status: 404,
-      json: async () => ({ error: "No berries data imported. Run: bin/rails pokeapi:import RESOURCES=berries" }),
+      json: async () => ({
+        error: "No berries data imported. Run: bin/rails pokeapi:import RESOURCES=berries",
+      }),
     });
 
     const err = await getResourceRows("berries", { fields: ["id"] }, (d) => d).catch((e) => e);
@@ -61,7 +76,11 @@ describe("getResourceRows", () => {
   });
 
   it("falls back to a generic message when the error body isn't JSON", async () => {
-    mockFetch({ ok: false, status: 502, json: async () => Promise.reject(new SyntaxError("bad json")) });
+    mockFetch({
+      ok: false,
+      status: 502,
+      json: async () => Promise.reject(new SyntaxError("bad json")),
+    });
 
     const err = await getResourceRows("moves", { fields: ["id"] }, (d) => d).catch((e) => e);
     expect(err).toBeInstanceOf(BackendError);
@@ -76,7 +95,9 @@ describe("getResourceRows", () => {
     const err = await getResourceRows("moves", { fields: ["id"] }, (d) => d).catch((e) => e);
 
     expect(err).toBeInstanceOf(BackendError);
-    expect(err.message).toBe("The data service is unavailable right now. Please try again shortly.");
+    expect(err.message).toBe(
+      "The data service is unavailable right now. Please try again shortly.",
+    );
     expect(err.message).not.toContain("localhost");
     expect(err.status).toBeUndefined();
     expect(String(log.mock.calls[0][0])).toContain("http://localhost:3001/api/moves/all");

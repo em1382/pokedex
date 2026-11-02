@@ -3,8 +3,8 @@
 PokeAPI data in MUI data grids, served from our own backend. After the data
 has been imported once, everything works offline.
 
-| Dir         | What                                                                        | Port |
-|-------------|-----------------------------------------------------------------------------|------|
+| Dir         | What                                                                         | Port |
+| ----------- | ---------------------------------------------------------------------------- | ---- |
 | `backend/`  | Rails 8 API serving PokeAPI data from SQLite (`storage/development.sqlite3`) | 3001 |
 | `frontend/` | Next.js 16 (App Router) + MUI `DataGrid`, one grid per resource type         | 3000 |
 
@@ -96,12 +96,12 @@ cd backend && bin/rails pokeapi:export FILE=/tmp/pokeapi.sqlite3
 
 ## Rails API
 
-| Route                                       | Returns                                                             |
-|---------------------------------------------|---------------------------------------------------------------------|
-| `GET /api/:resources?limit=&offset=`        | PokeAPI-style paginated list (`count`, `next`, `previous`, `results`) |
-| `GET /api/:resources/:id_or_name`           | The stored PokeAPI record, verbatim                                 |
+| Route                                              | Returns                                                                      |
+| -------------------------------------------------- | ---------------------------------------------------------------------------- |
+| `GET /api/:resources?limit=&offset=`               | PokeAPI-style paginated list (`count`, `next`, `previous`, `results`)        |
+| `GET /api/:resources/:id_or_name`                  | The stored PokeAPI record, verbatim                                          |
 | `GET /api/:resources/all?fields=&counts=&english=` | Every record in one JSON array, ordered by id, optionally trimmed (streamed) |
-| `GET /sprites/*path`                        | Sprite image (same path as under `PokeAPI/sprites/master/sprites/`) |
+| `GET /sprites/*path`                               | Sprite image (same path as under `PokeAPI/sprites/master/sprites/`)          |
 
 Collection paths are plural (`/api/moves`, `/api/abilities`, `/api/pokemon-species`); "pokemon"
 is its own plural (`/api/pokemon`). Singular paths return 404 with a hint. Records are still
@@ -159,14 +159,14 @@ Each grid's view is kept in the URL, so copying the address bar shares exactly w
 /moves?filter=type&op=equals&value=fire&sort=-power&page=2&pageSize=50&q=punch&hide=effect
 ```
 
-| Param      | Meaning                                                              |
-|------------|----------------------------------------------------------------------|
-| `page`     | 1-based page (omitted for page 1)                                    |
-| `pageSize` | 25, 50 or 100 (omitted for 25)                                       |
-| `sort`     | column field; `-` prefix for descending                              |
+| Param                   | Meaning                                                                                                                     |
+| ----------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `page`                  | 1-based page (omitted for page 1)                                                                                           |
+| `pageSize`              | 25, 50 or 100 (omitted for 25)                                                                                              |
+| `sort`                  | column field; `-` prefix for descending                                                                                     |
 | `filter`, `op`, `value` | the filter: column, operator (`contains`, `equals`, `>=`, `isAnyOf`, `isEmpty`, …) and value (repeat `value` for `isAnyOf`) |
-| `q`        | quick search text                                                    |
-| `hide`     | comma-separated hidden columns                                       |
+| `q`                     | quick search text                                                                                                           |
+| `hide`                  | comma-separated hidden columns                                                                                              |
 
 Defaults are left out, and unknown or invalid values are ignored and cleaned out of the URL.
 That includes filter operators the column doesn't offer. The ID column can't be hidden. Following

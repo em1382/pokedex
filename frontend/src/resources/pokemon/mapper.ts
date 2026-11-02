@@ -3,8 +3,17 @@ import { localSprite, type NamedAPIResource } from "@/lib/pokeapi-types";
 
 export const pokemonProjection: Projection = {
   fields: [
-    "id", "name", "height", "weight", "base_experience", "is_default",
-    "species", "sprites.front_default", "types", "abilities", "stats",
+    "id",
+    "name",
+    "height",
+    "weight",
+    "base_experience",
+    "is_default",
+    "species",
+    "sprites.front_default",
+    "types",
+    "abilities",
+    "stats",
   ],
   counts: ["moves"],
 };
@@ -47,8 +56,7 @@ export interface PokemonRow {
 
 export function toPokemonRow(p: PokemonDetail): PokemonRow {
   const stats = p.stats ?? [];
-  const stat = (name: string) =>
-    stats.find((s) => s.stat.name === name)?.base_stat ?? null;
+  const stat = (name: string) => stats.find((s) => s.stat.name === name)?.base_stat ?? null;
   return {
     id: p.id,
     name: p.name,

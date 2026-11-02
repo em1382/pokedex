@@ -4,7 +4,7 @@ class PokeapiControllerTest < ActionDispatch::IntegrationTest
   setup do
     add_record("pokemon", 25, "pikachu", is_default: true, height: 4,
                sprites: { front_default: "a.png", back_default: "b.png" },
-               moves: [{ move: { name: "thunder" } }, { move: { name: "tackle" } }])
+               moves: [ { move: { name: "thunder" } }, { move: { name: "tackle" } } ])
     add_record("pokemon", 1, "bulbasaur", is_default: true, height: 7, sprites: { front_default: nil }, moves: [])
     add_record("pokemon", 10_001, "deoxys-attack", is_default: false, height: 17, moves: [])
   end
@@ -37,7 +37,7 @@ class PokeapiControllerTest < ActionDispatch::IntegrationTest
     get "/api/pokemon/all"
 
     assert_response :ok
-    assert_equal [1, 25, 10_001], response.parsed_body.pluck("id")
+    assert_equal [ 1, 25, 10_001 ], response.parsed_body.pluck("id")
     assert_equal 2, response.parsed_body.second["moves"].size
   end
 
@@ -63,7 +63,7 @@ class PokeapiControllerTest < ActionDispatch::IntegrationTest
 
     get "/api/moves/all"
     assert_response :ok
-    assert_equal ["pound"], response.parsed_body.pluck("name")
+    assert_equal [ "pound" ], response.parsed_body.pluck("name")
 
     get "/api/moves"
     assert_equal "http://www.example.com/api/moves/1/", response.parsed_body["results"].first["url"]
@@ -99,7 +99,7 @@ class PokeapiControllerTest < ActionDispatch::IntegrationTest
     get "/api/pokemon", params: { limit: 1, offset: 1 }
 
     json = response.parsed_body
-    assert_equal ["pikachu"], json["results"].pluck("name")
+    assert_equal [ "pikachu" ], json["results"].pluck("name")
     assert_equal "http://www.example.com/api/pokemon?offset=0&limit=1", json["previous"]
     assert_equal "http://www.example.com/api/pokemon?offset=2&limit=1", json["next"]
 
@@ -154,13 +154,13 @@ class PokeapiControllerTest < ActionDispatch::IntegrationTest
     add_record("move", 1, "pound", flavor_text_entries: [
       { text: "Écras'Face", language: fr }, { text: "Pound!", language: en }, { text: "Pound again", language: en }
     ])
-    add_record("move", 2, "untranslated", flavor_text_entries: [{ text: "Écras'Face", language: fr }])
+    add_record("move", 2, "untranslated", flavor_text_entries: [ { text: "Écras'Face", language: fr } ])
 
     get "/api/moves/all", params: { fields: "id,flavor_text_entries", english: "flavor_text_entries" }
 
     assert_response :ok
     assert_equal [
-      { "id" => 1, "flavor_text_entries" => [{ "text" => "Pound!", "language" => { "name" => "en", "url" => "" } }] },
+      { "id" => 1, "flavor_text_entries" => [ { "text" => "Pound!", "language" => { "name" => "en", "url" => "" } } ] },
       { "id" => 2, "flavor_text_entries" => [] }
     ], response.parsed_body
   end
