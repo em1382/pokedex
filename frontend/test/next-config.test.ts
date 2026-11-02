@@ -36,4 +36,8 @@ describe("next.config", () => {
     expect(nextConfig.output).toBe("standalone");
     expect(nextConfig.outputFileTracingRoot).toBe(path.resolve(__dirname, "../.."));
   });
+
+  it("builds into .next unless NEXT_DIST_DIR says otherwise (the e2e tests use .next-e2e)", () => {
+    expect(nextConfig.distDir).toBe(process.env.NEXT_DIST_DIR || ".next");
+  });
 });

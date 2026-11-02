@@ -16,6 +16,9 @@ const SINGULAR_TO_PLURAL: Record<string, string> = {
 const nextConfig: NextConfig = {
   cacheComponents: true,
   partialPrefetching: true,
+  // The e2e tests build into their own folder (NEXT_DIST_DIR=.next-e2e), so a
+  // running `pnpm dev` keeps its .next untouched (Next.js clears its distDir).
+  distDir: process.env.NEXT_DIST_DIR || ".next",
   // Self-contained server for the Docker image (.next/standalone). Traced from
   // the monorepo root because pnpm keeps the real packages there.
   output: "standalone",

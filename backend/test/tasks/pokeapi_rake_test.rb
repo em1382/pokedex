@@ -1,5 +1,6 @@
 require "test_helper"
 require "rake"
+require "minitest/mock"
 
 class PokeapiRakeTest < ActiveSupport::TestCase
   BASE = PokeapiClient::BASE_URL
@@ -143,5 +144,29 @@ class PokeapiRakeTest < ActiveSupport::TestCase
 
     assert_nil exit
     assert_match(/item sprites: 1 downloaded, 0 from cache, 0 missing upstream$/, output)
+  end
+
+  test "e2e:fixture writes the fixture built from the imported data" do
+    written = nil
+    E2eFixture.stub(:build, { "records" => [ { "x" => 1 } ], "sprites" => [] }) do
+      File.stub(:write, ->(path, text) { written = [ path, text ] }) do
+        output, exit = run_task("e2e:fixture")
+        assert_nil exit
+        assert_match "1 records, 0 sprites", output
+      end
+    end
+    assert_equal E2eFixture::PATH, written[0]
+    assert_equal({ "records" => [ { "x" => 1 } ], "sprites" => [] }, JSON.parse(written[1]))
+  end
+
+  test "e2e:seed loads the fixture, and refuses a non-e2e database" do
+    E2eFixture.stub(:load, nil) do
+      output, exit = run_task("e2e:seed")
+      assert_nil exit
+      assert_match "Loaded the e2e fixture", output
+    end
+
+    _, exit = run_task("e2e:seed")
+    assert exit, "seeding the test database must abort"
   end
 end

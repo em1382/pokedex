@@ -19,6 +19,7 @@
     "test": "pnpm test:api && pnpm test:web",
     "test:api": "cd backend && bin/rails test",
     "test:web": "pnpm --filter frontend test",
+    "e2e": "pnpm --filter frontend e2e",
     "coverage": "cd backend && COVERAGE=1 bin/rails test && cd .. && pnpm --filter frontend test:coverage",
     "build": "pnpm --filter frontend build"
   },

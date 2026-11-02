@@ -194,6 +194,7 @@ pnpm lint          # RuboCop (rails-omakase) + ESLint (Next.js config)
 pnpm knip          # unused files, exports and dependencies in the frontend (Knip)
 pnpm typecheck
 pnpm coverage      # both test suites with coverage (backend/coverage, frontend/coverage)
+pnpm e2e           # end-to-end tests in Chromium (Playwright), against a fixture database
 pnpm build         # production build of the frontend
 ```
 
@@ -209,6 +210,15 @@ Editor basics are in `.editorconfig`.
   against the backend's `fields`/`counts`/`english` projection (`test/fixtures.ts`), the API client,
   loaders, grid configuration (MIT limits) with the real DataGrid as well, URL state, components, the
   grid page and its routes, and `next.config.ts`. `pnpm --filter frontend test:watch` for watch mode.
+
+- **End-to-end** (`frontend/e2e/*.spec.ts`, Playwright + Chromium): every grid, pagination, sorting,
+  filtering, quick search, shareable links, navigation and the mobile menu, in a real browser. Any
+  console error (including React hydration errors) fails the test. `pnpm e2e` builds the frontend,
+  starts it on port 3100 and Rails on 3101 (so `pnpm dev` can keep running), with Rails using a
+  separate database (`backend/storage/e2e.sqlite3`) loaded from a committed fixture: the first records
+  of each grid, trimmed, with their sprites (`backend/test/e2e/pokeapi.json`). Rebuild the fixture
+  from your imported data with `cd backend && bin/rails e2e:fixture`. First run:
+  `pnpm --filter frontend exec playwright install chromium`.
 
 Both suites are at 100% line and branch coverage, and it's enforced: a coverage run (`pnpm coverage`,
 and CI) fails if either drops below 100%.
