@@ -67,6 +67,9 @@ jobs:
       - name: Lint (ESLint)
         run: pnpm lint:web
 
+      - name: Dead code (Knip)
+        run: pnpm knip
+
       - name: Typecheck
         run: pnpm typecheck
 

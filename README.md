@@ -188,9 +188,10 @@ so updating the URL never re-fetches the rows (`lib/gridUrlState.ts`, `component
 Node 24 (`.nvmrc`), Ruby 3.4 (`backend/.ruby-version`) and pnpm (`packageManager`) are pinned.
 
 ```sh
-pnpm check         # everything CI runs: format check, lint, typecheck, tests
+pnpm check         # everything CI runs: format check, lint, Knip, typecheck, tests
 pnpm format        # Prettier (frontend, Markdown, JSON, YAML) + RuboCop autocorrect (backend)
 pnpm lint          # RuboCop (rails-omakase) + ESLint (Next.js config)
+pnpm knip          # unused files, exports and dependencies in the frontend (Knip)
 pnpm typecheck
 pnpm coverage      # both test suites with coverage (backend/coverage, frontend/coverage)
 pnpm build         # production build of the frontend

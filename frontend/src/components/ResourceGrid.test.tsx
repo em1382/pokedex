@@ -72,7 +72,8 @@ describe("ResourceGrid", () => {
   it("limits the quick search to the name column", () => {
     for (const col of props.columns) {
       if (col.field === "name") expect(col.getApplyQuickFilterFn, col.field).toBeUndefined();
-      else expect(col.getApplyQuickFilterFn?.("x", col, {} as never), col.field).toBeNull();
+      else
+        expect(col.getApplyQuickFilterFn?.("x", col as never, {} as never), col.field).toBeNull();
     }
     expect(props.localeText?.toolbarQuickFilterPlaceholder).toBe("Search names…");
   });
