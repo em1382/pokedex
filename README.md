@@ -165,7 +165,7 @@ Each grid's view is kept in the URL, so copying the address bar shares exactly w
 | `pageSize`              | 25, 50 or 100 (omitted for 25)                                                                                              |
 | `sort`                  | column field; `-` prefix for descending                                                                                     |
 | `filter`, `op`, `value` | the filter: column, operator (`contains`, `equals`, `>=`, `isAnyOf`, `isEmpty`, …) and value (repeat `value` for `isAnyOf`) |
-| `q`                     | quick search text                                                                                                           |
+| `q`                     | quick search text (matches the Name column)                                                                                 |
 | `hide`                  | comma-separated hidden columns                                                                                              |
 
 Defaults are left out, and unknown or invalid values are ignored and cleaned out of the URL.
