@@ -43,11 +43,21 @@ function fromUrl(search: string, options: GridUrlOptions): UrlSync {
   return { view, seen: search, pending: normalized === search ? [] : [normalized] };
 }
 
-/** Display columns: ellipsis cells, and the ID column always visible. */
+/** The only column the toolbar's quick search looks at. */
+const SEARCH_FIELD = "name";
+
+/**
+ * Display columns: ellipsis cells, the ID column always visible, and quick
+ * search limited to the name (returning null skips a column).
+ */
 function useColumns(slug: ResourceSlug): GridColDef[] {
   return useMemo(
     () =>
-      withEllipsis(COLUMNS[slug]).map((c) => (c.field === "id" ? { ...c, hideable: false } : c)),
+      withEllipsis(COLUMNS[slug]).map((c) => ({
+        ...c,
+        ...(c.field === "id" && { hideable: false }),
+        ...(c.field !== SEARCH_FIELD && { getApplyQuickFilterFn: () => null }),
+      })),
     [slug],
   );
 }
@@ -174,6 +184,10 @@ function GridFrame({ columns, rows, view, onViewChange, loading = false }: Frame
             csvOptions: { disableToolbarButton: true },
             printOptions: { disableToolbarButton: true },
           },
+        }}
+        localeText={{
+          toolbarQuickFilterPlaceholder: "Search names…",
+          toolbarQuickFilterLabel: "Search names",
         }}
         disableRowSelectionOnClick
         rowHeight={ROW_HEIGHT}

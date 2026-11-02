@@ -69,6 +69,14 @@ describe("ResourceGrid", () => {
     }
   });
 
+  it("limits the quick search to the name column", () => {
+    for (const col of props.columns) {
+      if (col.field === "name") expect(col.getApplyQuickFilterFn, col.field).toBeUndefined();
+      else expect(col.getApplyQuickFilterFn?.("x", col, {} as never), col.field).toBeNull();
+    }
+    expect(props.localeText?.toolbarQuickFilterPlaceholder).toBe("Search names…");
+  });
+
   it("keeps the ID column visible (it can't be hidden)", () => {
     expect(props.columns.find((c) => c.field === "id")?.hideable).toBe(false);
     expect(props.columns.filter((c) => c.hideable === false)).toHaveLength(1);

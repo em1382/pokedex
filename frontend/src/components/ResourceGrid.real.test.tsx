@@ -26,4 +26,18 @@ describe("ResourceGrid with the real DataGrid", () => {
     expect(screen.getByRole("grid")).toBeInTheDocument();
     expect(window.location.search).toBe(""); // the bad filter is dropped from the URL too
   });
+
+  it("quick search matches names only, not other columns", () => {
+    const moves = [
+      { id: 1, name: "fire-punch", type: "fire", power: 75 },
+      { id: 2, name: "ember", type: "fire", power: 40 }, // Fire type, but not named "fire"
+      { id: 3, name: "pound", type: "normal", power: 40 },
+    ];
+    window.history.replaceState(null, "", "/moves?q=fire");
+
+    render(<ResourceGrid slug="move" rows={moves as never} />);
+
+    // The footer counts the rows left after filtering.
+    expect(screen.getByText("1–1 of 1")).toBeInTheDocument();
+  });
 });
