@@ -1,9 +1,11 @@
-# Coverage: COVERAGE=1 bin/rails test (HTML report in coverage/).
+# Coverage: COVERAGE=1 bin/rails test (HTML report in coverage/). The run fails
+# if line or branch coverage drops below 100%.
 if ENV["COVERAGE"]
   require "simplecov"
   SimpleCov.start "rails" do
     enable_coverage :branch
     add_filter %w[/bin/ /db/ /test/ /config/]
+    minimum_coverage line: 100, branch: 100
   end
 end
 
@@ -14,13 +16,9 @@ require "webmock/minitest"
 
 module ActiveSupport
   class TestCase
-    parallelize(workers: :number_of_processors)
-
-    # Each parallel worker records its own coverage; SimpleCov merges them.
-    if ENV["COVERAGE"]
-      parallelize_setup { |worker| SimpleCov.command_name "#{SimpleCov.command_name}-#{worker}" }
-      parallelize_teardown { SimpleCov.result }
-    end
+    # A coverage run stays in one process: SimpleCov won't report merged
+    # results from forked workers (and the suite only takes a second or two).
+    parallelize(workers: ENV["COVERAGE"] ? 1 : :number_of_processors)
 
     # Nothing in the test suite may reach the network, and retry backoff doesn't really wait.
     setup do

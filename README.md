@@ -209,4 +209,5 @@ Editor basics are in `.editorconfig`.
   loaders, grid configuration (MIT limits) with the real DataGrid as well, URL state, components, the
   grid page and its routes, and `next.config.ts`. `pnpm --filter frontend test:watch` for watch mode.
 
-Both suites are at 100% coverage.
+Both suites are at 100% line and branch coverage, and it's enforced: a coverage run (`pnpm coverage`,
+and CI) fails if either drops below 100%.

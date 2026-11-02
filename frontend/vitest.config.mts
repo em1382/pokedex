@@ -27,6 +27,8 @@ export default defineConfig({
       include: ["src/**/*.{ts,tsx}"],
       exclude: ["src/**/*.test.{ts,tsx}"],
       reporter: ["text", "html"],
+      // CI fails if coverage drops below 100%.
+      thresholds: { lines: 100, branches: 100, functions: 100, statements: 100 },
     },
   },
 });
