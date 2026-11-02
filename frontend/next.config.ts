@@ -1,3 +1,5 @@
+import path from "node:path";
+
 import type { NextConfig } from "next";
 
 const RAILS_API_URL = process.env.RAILS_API_URL ?? "http://localhost:3001";
@@ -14,6 +16,10 @@ const SINGULAR_TO_PLURAL: Record<string, string> = {
 const nextConfig: NextConfig = {
   cacheComponents: true,
   partialPrefetching: true,
+  // Self-contained server for the Docker image (.next/standalone). Traced from
+  // the monorepo root because pnpm keeps the real packages there.
+  output: "standalone",
+  outputFileTracingRoot: path.join(__dirname, ".."),
   async redirects() {
     return Object.entries(SINGULAR_TO_PLURAL).map(([singular, plural]) => ({
       source: `/${singular}`,

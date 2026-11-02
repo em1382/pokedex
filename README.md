@@ -33,6 +33,27 @@ pnpm dev            # Rails on :3001 and Next on :3000
 
 Open http://localhost:3000.
 
+## Docker (fully offline)
+
+One image runs both apps, with the PokeAPI data imported **at build time** into SQLite
+(records + sprites). Building needs network access; the running container needs none.
+
+```sh
+docker build -t pokedex .
+docker run --rm -p 3000:3000 pokedex          # http://localhost:3000
+```
+
+- Only Next.js (port 3000) is exposed. Rails listens on `127.0.0.1:3001` inside the container, and
+  Next starts only once Rails is up. The healthcheck covers both.
+- Build args: `POKEAPI_RESOURCES` (default `pokemon,moves,abilities,items,types`),
+  `POKEAPI_SPRITES` (`0` to skip images), `POKEAPI_DELAY` (seconds between upstream requests,
+  default `0.05`).
+- Fair use: PokeAPI responses are kept in a BuildKit cache mount (`id=pokeapi-cache`), so rebuilds
+  reuse them instead of downloading again.
+- Rails' production SSL settings are opt-in (`RAILS_FORCE_SSL=1`, `RAILS_ASSUME_SSL=1`), because
+  in this setup Rails is never exposed directly. `SECRET_KEY_BASE` defaults to a random value per
+  boot (the API has no sessions); set it explicitly if you need a stable one.
+
 ## Importing data (`bin/rails pokeapi:import`)
 
 ```sh

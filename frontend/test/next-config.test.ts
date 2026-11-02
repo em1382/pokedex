@@ -1,3 +1,5 @@
+import path from "node:path";
+
 import { describe, expect, it } from "vitest";
 
 import { RESOURCE_META, RESOURCE_SLUGS } from "@/resources/meta";
@@ -28,5 +30,10 @@ describe("next.config", () => {
 
   it("keeps Cache Components on (the grid pages rely on Suspense streaming)", () => {
     expect(nextConfig.cacheComponents).toBe(true);
+  });
+
+  it("builds a standalone server traced from the monorepo root (Docker image)", () => {
+    expect(nextConfig.output).toBe("standalone");
+    expect(nextConfig.outputFileTracingRoot).toBe(path.resolve(__dirname, "../.."));
   });
 });
