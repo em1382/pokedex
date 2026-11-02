@@ -8,15 +8,26 @@
     "dev:web": "pnpm --filter frontend dev",
     "import": "cd backend && bin/rails pokeapi:import",
     "import:status": "cd backend && bin/rails pokeapi:status",
+    "check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test",
+    "lint": "pnpm lint:api && pnpm lint:web",
+    "lint:api": "cd backend && bin/rubocop",
+    "lint:web": "pnpm --filter frontend lint",
+    "format": "prettier --write . && cd backend && bin/rubocop --autocorrect",
+    "format:check": "prettier --check .",
+    "typecheck": "pnpm --filter frontend typecheck",
     "test": "pnpm test:api && pnpm test:web",
     "test:api": "cd backend && bin/rails test",
-    "build": "pnpm --filter frontend build",
-    "test:web": "pnpm --filter frontend lint && pnpm --filter frontend typecheck && pnpm --filter frontend test",
-    "coverage": "cd backend && COVERAGE=1 bin/rails test && cd .. && pnpm --filter frontend test:coverage"
+    "test:web": "pnpm --filter frontend test",
+    "coverage": "cd backend && COVERAGE=1 bin/rails test && cd .. && pnpm --filter frontend test:coverage",
+    "build": "pnpm --filter frontend build"
   },
   "devDependencies": {
-    "concurrently": "^9.2.1"
+    "concurrently": "^9.2.1",
+    "prettier": "^3.9.10"
   },
   "packageManager": "pnpm@12.14.0",
-  "license": "MIT"
+  "license": "MIT",
+  "engines": {
+    "node": ">=24"
+  }
 }

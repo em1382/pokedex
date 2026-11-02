@@ -1,0 +1,8 @@
+#!/usr/bin/env ruby
+require "rubygems"
+require "bundler/setup"
+
+# Explicit config path, so it also works when run from another directory.
+ARGV.unshift("--config", File.expand_path("../.rubocop.yml", __dir__)) unless ARGV.include?("--config")
+
+load Gem.bin_path("rubocop", "rubocop")

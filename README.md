@@ -183,6 +183,22 @@ so updating the URL never re-fetches the rows (`lib/gridUrlState.ts`, `component
 5. Add its page, `app/(grids)/<path>/page.tsx` (copy an existing one and change the slug). A test
    fails if a grid in `meta.ts` has no page.
 
+## Development
+
+Node 24 (`.nvmrc`), Ruby 3.2 (`backend/.ruby-version`) and pnpm (`packageManager`) are pinned.
+
+```sh
+pnpm check         # everything CI runs: format check, lint, typecheck, tests
+pnpm format        # Prettier (frontend, Markdown, JSON, YAML) + RuboCop autocorrect (backend)
+pnpm lint          # RuboCop (rails-omakase) + ESLint (Next.js config)
+pnpm typecheck
+pnpm coverage      # both test suites with coverage (backend/coverage, frontend/coverage)
+pnpm build         # production build of the frontend
+```
+
+CI (`.github/workflows/ci.yml`) runs these on every push to `main` and every pull request.
+Editor basics are in `.editorconfig`.
+
 ## Tests
 
 - **Backend** (`backend/test`, Minitest): models, services (upstream client, importer,

@@ -4,3 +4,16 @@ packages:
 allowBuilds:
   sharp: false
   unrs-resolver: false
+
+# Security: minimatch < 11.0.1 has a DoS advisory (GHSA-g3hv-75wg-m249). It's only
+# reachable through ESLint, whose packages still pin 10.x; 11's API is compatible.
+overrides:
+  minimatch: ^11.0.1
+
+# ESLint 10 (needed to drop the old minimatch) works with these plugins, which
+# just haven't declared support yet; verified by linting probe files.
+peerDependencyRules:
+  allowedVersions:
+    eslint-plugin-import>eslint: "10"
+    eslint-plugin-jsx-a11y>eslint: "10"
+    eslint-plugin-react>eslint: "10"

@@ -1,0 +1,84 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend (Rails)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    env:
+      RAILS_ENV: test
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ruby/setup-ruby@v1 # Ruby version from backend/.ruby-version
+        with:
+          working-directory: backend
+          bundler-cache: true
+
+      - name: Lint (RuboCop)
+        run: bin/rubocop
+
+      - name: Prepare test database
+        run: bin/rails db:prepare
+
+      - name: Test (with coverage)
+        run: COVERAGE=1 bin/rails test
+
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: backend-coverage
+          path: backend/coverage
+          if-no-files-found: ignore
+
+  frontend:
+    name: Frontend (Next.js)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6 # pnpm version from package.json "packageManager"
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Format (Prettier, whole repo)
+        run: pnpm format:check
+
+      - name: Lint (ESLint)
+        run: pnpm lint:web
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Test (with coverage)
+        run: pnpm --filter frontend test:coverage
+
+      - name: Build
+        run: pnpm build
+
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: frontend-coverage
+          path: frontend/coverage
+          if-no-files-found: ignore

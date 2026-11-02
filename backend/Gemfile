@@ -1,21 +1,17 @@
 source "https://rubygems.org"
 
 gem "rails", "~> 8.1.4"
-# Use the Puma web server [https://github.com/puma/puma]
 gem "puma", ">= 5.0"
-
+gem "bootsnap", require: false
 # Local database holding the imported PokeAPI data (offline serving).
 gem "sqlite3", ">= 2.1"
-
-# Windows does not include zoneinfo files, so bundle the tzinfo-data gem
+# Windows has no zoneinfo files.
 gem "tzinfo-data", platforms: %i[ windows jruby ]
 
-# Reduces boot times through caching; required in config/boot.rb
-gem "bootsnap", require: false
-
 group :development, :test do
-  # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
   gem "debug", platforms: %i[ mri windows ], require: "debug/prelude"
+  # Rails' default Ruby style (bin/rubocop).
+  gem "rubocop-rails-omakase", require: false
 end
 
 group :test do

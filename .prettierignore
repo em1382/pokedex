@@ -1,0 +1,10 @@
+# Generated / vendored
+pnpm-lock.yaml
+**/node_modules
+frontend/.next
+frontend/next-env.d.ts
+**/coverage
+frontend/AGENTS.md
+
+# Backend: Ruby is formatted by RuboCop; the rest is Rails-generated or local state
+backend/
