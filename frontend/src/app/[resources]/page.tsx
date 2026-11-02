@@ -10,16 +10,16 @@ import { loadRows } from "@/resources";
 import { RESOURCE_META, slugForPath, type ResourceSlug } from "@/resources/meta";
 import { fib } from "@/theme/spacing";
 
-export default function ResourcePage({ params }: PageProps<"/[resources]">) {
+export default function ResourcePage({ params, searchParams }: PageProps<"/[resources]">) {
   // Params resolve almost immediately; nothing to show until we know the title.
   return (
     <Suspense fallback={null}>
-      <ResourceView params={params} />
+      <ResourceView params={params} searchParams={searchParams} />
     </Suspense>
   );
 }
 
-async function ResourceView({ params }: Pick<PageProps<"/[resources]">, "params">) {
+async function ResourceView({ params, searchParams }: PageProps<"/[resources]">) {
   const slug = slugForPath((await params).resources);
   if (!slug) notFound();
 
@@ -33,12 +33,18 @@ async function ResourceView({ params }: Pick<PageProps<"/[resources]">, "params"
         </>
       }
     >
-      <GridData slug={slug} />
+      <GridData slug={slug} searchParams={searchParams} />
     </Suspense>
   );
 }
 
-async function GridData({ slug }: { slug: ResourceSlug }) {
+async function GridData({
+  slug,
+  searchParams,
+}: {
+  slug: ResourceSlug;
+  searchParams: PageProps<"/[resources]">["searchParams"];
+}) {
   // Request-time only: never prerender (the Rails API need not be up at build time).
   await connection();
   const result = await loadRows(slug).then(
@@ -48,13 +54,15 @@ async function GridData({ slug }: { slug: ResourceSlug }) {
       throw err;
     },
   );
+  const query = toQueryString(await searchParams);
   return (
     <>
       <Title slug={slug} />
       {"error" in result ? (
         <Alert severity="error">{result.error}</Alert>
       ) : (
-        <ResourceGrid slug={slug} rows={result.rows} />
+        // Keyed on the query so following a shared link to this grid starts that view.
+        <ResourceGrid key={query} slug={slug} rows={result.rows} query={query} />
       )}
     </>
   );
@@ -66,4 +74,13 @@ function Title({ slug }: { slug: ResourceSlug }) {
       {RESOURCE_META[slug].label}
     </Typography>
   );
+}
+
+/** Next's searchParams object back to a query string (repeated keys preserved). */
+function toQueryString(params: Record<string, string | string[] | undefined>): string {
+  const search = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) {
+    for (const v of Array.isArray(value) ? value : value === undefined ? [] : [value]) search.append(key, v);
+  }
+  return search.toString();
 }

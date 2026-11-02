@@ -102,6 +102,27 @@ frontend/src/
 `RAILS_API_URL` (default `http://localhost:3001`) is used for server-side fetches
 and for the `/sprites` rewrite in `next.config.ts`.
 
+### Shareable links
+
+Each grid's view is kept in the URL, so copying the address bar shares exactly what you see:
+
+```
+/moves?filter=type&op=equals&value=fire&sort=-power&page=2&pageSize=50&q=punch&hide=effect
+```
+
+| Param      | Meaning                                                              |
+|------------|----------------------------------------------------------------------|
+| `page`     | 1-based page (omitted for page 1)                                    |
+| `pageSize` | 25, 50 or 100 (omitted for 25)                                       |
+| `sort`     | column field; `-` prefix for descending                              |
+| `filter`, `op`, `value` | the filter: column, operator (`contains`, `equals`, `>=`, `isAnyOf`, `isEmpty`, …) and value (repeat `value` for `isAnyOf`) |
+| `q`        | quick search text                                                    |
+| `hide`     | comma-separated hidden columns                                       |
+
+Defaults are left out, and unknown or invalid values are ignored (the URL is cleaned up).
+Changes use `history.replaceState`, so updating the URL never re-fetches the rows
+(`lib/gridUrlState.ts`, `components/ResourceGrid.tsx`).
+
 ### Adding a grid
 
 1. Import the data: `bin/rails pokeapi:import RESOURCES=<slug>`. To also import its images, add the sprite's JSON path to `PokeapiImporter::SPRITE_PATHS`.

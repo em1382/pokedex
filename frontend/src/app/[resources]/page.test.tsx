@@ -8,7 +8,7 @@ import ResourcePage from "./page";
 // Server-component tree, exercised by calling each async component directly.
 const { loadRows, gridProps } = vi.hoisted(() => ({
   loadRows: vi.fn(),
-  gridProps: [] as { slug: string; rows: unknown[]; loading?: boolean }[],
+  gridProps: [] as { slug: string; rows: unknown[]; loading?: boolean; query?: string }[],
 }));
 
 vi.mock("@/resources", () => ({ loadRows }));
@@ -19,7 +19,7 @@ vi.mock("next/navigation", () => ({
   },
 }));
 vi.mock("@/components/ResourceGrid", () => ({
-  default: (props: { slug: string; rows: unknown[]; loading?: boolean }) => {
+  default: (props: { slug: string; rows: unknown[]; loading?: boolean; query?: string }) => {
     gridProps.push(props);
     return <div data-testid="grid">{props.loading ? "skeleton" : `${props.rows.length} rows`}</div>;
   },
@@ -35,8 +35,11 @@ async function unwrap(suspense: El) {
   return { fallback: suspense.props.fallback, child: (await (child.type as AsyncComponent)(child.props)) as El };
 }
 
-async function renderPage(path: string) {
-  const page = ResourcePage({ params: Promise.resolve({ resources: path }) } as never) as El;
+async function renderPage(path: string, search: Record<string, string | string[] | undefined> = {}) {
+  const page = ResourcePage({
+    params: Promise.resolve({ resources: path }),
+    searchParams: Promise.resolve(search),
+  } as never) as El;
   const outer = await unwrap(page); // awaits params → inner Suspense
   const inner = await unwrap(outer.child); // awaits rows → title + grid/alert
   return { outerFallback: outer.fallback, innerFallback: inner.fallback, content: inner.child };
@@ -75,7 +78,18 @@ describe("grid page", () => {
     expect(loadRows).toHaveBeenCalledWith("ability");
     expect(screen.getByRole("heading", { level: 1, name: "Abilities" })).toBeInTheDocument();
     expect(screen.getByTestId("grid")).toHaveTextContent("3 rows");
-    expect(gridProps.at(-1)).toMatchObject({ slug: "ability", rows });
+    expect(gridProps.at(-1)).toMatchObject({ slug: "ability", rows, query: "" });
+  });
+
+  it("hands the grid the shared view from the query string (repeated keys kept)", async () => {
+    loadRows.mockResolvedValue([{ id: 1 }]);
+    const { content } = await renderPage("moves", { filter: "power", op: "isAnyOf", value: ["40", "90"], page: "2", unset: undefined });
+
+    render(<>{content}</>);
+
+    expect(gridProps.at(-1)?.query).toBe("filter=power&op=isAnyOf&value=40&value=90&page=2");
+    const grid = (content.props.children as El[]).find((c) => isValidElement(c) && c.key !== null) as El;
+    expect(grid.key).toBe("filter=power&op=isAnyOf&value=40&value=90&page=2");
   });
 
   it("shows the backend's error message instead of the grid", async () => {
