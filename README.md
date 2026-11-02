@@ -22,10 +22,10 @@ browser ──> Next.js server ──> Rails /api/:resources/all ──> SQLite
 
 ## Setup
 
-You need Ruby 3.2+ (with `ruby-dev` headers), Node 20+ and pnpm.
+You need Ruby 3.4 (the version in `backend/.ruby-version`, e.g. `rbenv install 3.4.9`),
+Node 24 and pnpm.
 
 ```sh
-export PATH="$HOME/.local/share/gem/ruby/3.2.0/bin:$PATH"   # if gems are user-installed
 pnpm bootstrap      # pnpm install, bundle install, create the SQLite DB
 pnpm import         # one-time download into SQLite (needs network)
 pnpm dev            # Rails on :3001 and Next on :3000
@@ -185,7 +185,7 @@ so updating the URL never re-fetches the rows (`lib/gridUrlState.ts`, `component
 
 ## Development
 
-Node 24 (`.nvmrc`), Ruby 3.2 (`backend/.ruby-version`) and pnpm (`packageManager`) are pinned.
+Node 24 (`.nvmrc`), Ruby 3.4 (`backend/.ruby-version`) and pnpm (`packageManager`) are pinned.
 
 ```sh
 pnpm check         # everything CI runs: format check, lint, typecheck, tests

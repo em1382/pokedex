@@ -7,7 +7,7 @@
 #   docker build -t pokedex .
 #   docker run --rm -p 3000:3000 pokedex      # http://localhost:3000
 
-ARG RUBY_VERSION=3.2.3
+ARG RUBY_VERSION=3.4.9
 ARG NODE_VERSION=24
 
 # ---------------------------------------------------------------- api + data
