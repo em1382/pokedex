@@ -45,4 +45,21 @@ class PokeapiProjectionTest < ActiveSupport::TestCase
     too_many = (1..PokeapiProjection::MAX_PATHS + 1).map { "f#{_1}" }
     assert_raises(PokeapiProjection::Invalid) { PokeapiProjection.new(fields: too_many) }
   end
+
+  test "english reduces a top-level localized array to its first English entry" do
+    sql, binds = PokeapiProjection.new(fields: "id,effect_entries", english: "effect_entries").to_sql
+    assert_match "json_each(body, ?)", sql
+    assert_match "value ->> '$.language.name' = ? ORDER BY key LIMIT 1", sql
+    assert_equal ["id", "$.id", "effect_entries", "$.effect_entries", "en"], binds
+  end
+
+  test "english keys must be top-level fields that are also requested" do
+    assert_raises(PokeapiProjection::Invalid) { PokeapiProjection.new(fields: "id", english: "effect_entries") }
+    assert_raises(PokeapiProjection::Invalid) { PokeapiProjection.new(fields: "a.b", english: "a.b") }
+  end
+
+  test "a field named like a count clashes with that count" do
+    error = assert_raises(PokeapiProjection::Invalid) { PokeapiProjection.new(fields: "moves_count", counts: "moves") }
+    assert_match "moves_count", error.message
+  end
 end

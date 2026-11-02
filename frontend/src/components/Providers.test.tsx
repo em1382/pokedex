@@ -19,8 +19,15 @@ describe("Providers", () => {
     expect(screen.getByText(theme.palette.primary.main)).toBeInTheDocument();
   });
 
-  it("uses MUI's stock spacing (only our own values are Fibonacci)", () => {
-    expect(theme.spacing(2)).toBe("16px");
+  it("uses MUI's stock 8px spacing (only our own values are Fibonacci)", () => {
+    expect(theme.spacing(2)).toBe("calc(2 * var(--mui-spacing, 8px))");
     expect(theme.palette.primary.main).toBe("#d32f2f");
+  });
+
+  it("has light and dark schemes as CSS variables, switched by a class", () => {
+    // colorSchemes exists at runtime but isn't on MUI's public Theme type.
+    const { colorSchemes } = theme as unknown as { colorSchemes: Record<string, unknown> };
+    expect(Object.keys(colorSchemes)).toEqual(["light", "dark"]);
+    expect(theme.vars).toBeDefined();
   });
 });

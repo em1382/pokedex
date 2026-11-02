@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import type { ReactElement } from "react";
 
+import InitColorSchemeScript from "@mui/material/InitColorSchemeScript";
+
 import NavBar from "@/components/NavBar";
 import Providers from "@/components/Providers";
 import RootLayout, { metadata } from "./layout";
@@ -11,7 +13,7 @@ const kids = (el: El) => [el.props.children].flat() as El[];
 describe("RootLayout", () => {
   const html = RootLayout({ children: <p>page</p> } as never) as El;
   const body = kids(html)[0];
-  const providers = kids(body)[0];
+  const [colorScheme, providers] = kids(body);
   const [nav, main] = kids(providers).filter(Boolean);
 
   it("renders an English document", () => {
@@ -28,7 +30,12 @@ describe("RootLayout", () => {
     expect(kids(main).some((c) => c && (c as El).type === "p")).toBe(true);
   });
 
-  it("sets the page title", () => {
-    expect(metadata.title).toBe("PokeAPI Grids");
+  it("applies the light/dark scheme before first paint (no flash for dark-mode users)", () => {
+    expect(colorScheme.type).toBe(InitColorSchemeScript);
+    expect((colorScheme.props as { attribute?: string }).attribute).toBe("class");
+  });
+
+  it("titles pages '<grid> · PokeAPI Grids', defaulting to the app name", () => {
+    expect(metadata.title).toEqual({ default: "PokeAPI Grids", template: "%s · PokeAPI Grids" });
   });
 });

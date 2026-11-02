@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { BackendError, getResourceRows, RAILS_API_URL } from "./api";
+import { BackendError, getResourceRows } from "./api";
 
 function mockFetch(response: Partial<Response> | Error) {
   const fn = vi.fn(async () => {
@@ -16,10 +16,6 @@ const ok = (body: unknown) => ({ ok: true, status: 200, json: async () => body }
 afterEach(() => vi.unstubAllGlobals());
 
 describe("getResourceRows", () => {
-  it("defaults to the local Rails API", () => {
-    expect(RAILS_API_URL).toBe("http://localhost:3001");
-  });
-
   it("requests /api/<path>/all with the projection and maps every record", async () => {
     const fetch = mockFetch(ok([{ id: 1, name: "a" }, { id: 2, name: "b" }]));
 
@@ -37,6 +33,12 @@ describe("getResourceRows", () => {
     expect(parsed.searchParams.get("fields")).toBe("id,name,sprites.default");
     expect(parsed.searchParams.get("counts")).toBe("learned_by_pokemon");
     expect(init).toEqual({ cache: "no-store" });
+  });
+
+  it("asks for English-only localized arrays", async () => {
+    const fetch = mockFetch(ok([]));
+    await getResourceRows("items", { fields: ["id", "effect_entries"], english: ["effect_entries"] }, (d) => d);
+    expect(new URL((fetch.mock.calls[0] as unknown as [string])[0]).searchParams.get("english")).toBe("effect_entries");
   });
 
   it("omits counts when the projection has none", async () => {
@@ -67,12 +69,16 @@ describe("getResourceRows", () => {
     expect(err.status).toBe(502);
   });
 
-  it("explains when the backend is unreachable", async () => {
+  it("shows a generic message when the backend is unreachable, logging the details server-side", async () => {
+    const log = vi.spyOn(console, "error").mockImplementation(() => {});
     mockFetch(new TypeError("fetch failed"));
 
     const err = await getResourceRows("moves", { fields: ["id"] }, (d) => d).catch((e) => e);
+
     expect(err).toBeInstanceOf(BackendError);
-    expect(err.message).toMatch(/Could not reach the Rails API at http:\/\/localhost:3001 \(fetch failed\)/);
+    expect(err.message).toBe("The data service is unavailable right now. Please try again shortly.");
+    expect(err.message).not.toContain("localhost");
     expect(err.status).toBeUndefined();
+    expect(String(log.mock.calls[0][0])).toContain("http://localhost:3001/api/moves/all");
   });
 });

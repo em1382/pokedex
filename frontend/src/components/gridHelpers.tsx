@@ -3,9 +3,8 @@ import type { GridColDef, GridValidRowModel } from "@mui/x-data-grid";
 import EllipsisCell from "./EllipsisCell";
 
 /**
- * Every grid uses the same fixed row height: 55px, the smallest Fibonacci
- * number that fits the tallest cell content (40px sprites; the original
- * sprite rows were 48px). Nothing wraps, so no row can grow past it.
+ * Every grid uses the same fixed row height: the smallest Fibonacci number that
+ * fits the tallest cell content (40px sprites). Nothing wraps, so rows never grow.
  */
 export const ROW_HEIGHT = 55;
 

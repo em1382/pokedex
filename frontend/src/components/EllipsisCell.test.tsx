@@ -40,6 +40,35 @@ describe("EllipsisCell", () => {
     expect(screen.queryByRole("tooltip")).not.toBeInTheDocument();
   });
 
+  it("opens for keyboard users when the grid cell gets focus, and closes on blur", async () => {
+    overflow(true);
+    render(
+      <div role="gridcell" tabIndex={0} data-testid="cell">
+        <EllipsisCell text={TEXT} />
+      </div>,
+    );
+
+    screen.getByTestId("cell").focus();
+    expect(await screen.findByRole("tooltip")).toHaveTextContent(TEXT);
+
+    screen.getByTestId("cell").blur();
+    await vi.waitFor(() => expect(screen.queryByRole("tooltip")).not.toBeInTheDocument());
+  });
+
+  it("stays closed on focus when the text fits", async () => {
+    overflow(false);
+    render(
+      <div role="gridcell" tabIndex={0} data-testid="cell">
+        <EllipsisCell text={TEXT} />
+      </div>,
+    );
+
+    screen.getByTestId("cell").focus();
+
+    await new Promise((r) => setTimeout(r, 50));
+    expect(screen.queryByRole("tooltip")).not.toBeInTheDocument();
+  });
+
   it("hides the tooltip again when the pointer leaves", async () => {
     overflow(true);
     render(<EllipsisCell text={TEXT} />);

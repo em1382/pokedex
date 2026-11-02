@@ -1,3 +1,4 @@
+import { cacheLife } from "next/cache";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { abilityDoc, itemDoc, moveDoc, pokemonDoc, project, typeDoc } from "../../test/fixtures";
@@ -9,6 +10,9 @@ import { RESOURCE_META, RESOURCE_SLUGS, type ResourceSlug } from "./meta";
 import { moveProjection } from "./move/mapper";
 import { pokemonProjection } from "./pokemon/mapper";
 import { typeProjection } from "./type/mapper";
+
+// Outside Next, "use cache" is a no-op string; cacheLife needs the Next runtime.
+vi.mock("next/cache", () => ({ cacheLife: vi.fn() }));
 
 const PROJECTED: Record<ResourceSlug, Record<string, unknown>> = {
   pokemon: project(pokemonDoc, pokemonProjection),
@@ -40,6 +44,12 @@ describe("loadRows", () => {
     );
     expect(rows).toHaveLength(1);
     expect(rows[0].id).toBe(PROJECTED[slug].id);
+  });
+
+  it("caches rows for hours (data only changes on re-import)", async () => {
+    serve();
+    await loadRows("type");
+    expect(cacheLife).toHaveBeenCalledWith("hours");
   });
 
   it.each(RESOURCE_SLUGS)("produces every field the %s grid's columns display", async (slug) => {

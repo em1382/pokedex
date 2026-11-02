@@ -10,8 +10,10 @@ export const moveProjection: Projection = {
   fields: [
     "id", "name", "accuracy", "power", "pp", "priority", "effect_chance",
     "type", "damage_class", "target", "generation", "effect_entries",
+    "flavor_text_entries",
   ],
   counts: ["learned_by_pokemon"],
+  english: ["effect_entries", "flavor_text_entries"],
 };
 
 interface MoveDetail {
@@ -27,6 +29,8 @@ interface MoveDetail {
   target: NamedAPIResource;
   generation: NamedAPIResource;
   effect_entries: VerboseEffect[];
+  /** Fallback text: newer moves often have no effect entry. */
+  flavor_text_entries: { flavor_text: string; language: NamedAPIResource }[];
   learned_by_pokemon_count: number;
 }
 
@@ -47,7 +51,7 @@ export interface MoveRow {
 }
 
 export function toMoveRow(m: MoveDetail): MoveRow {
-  const effect = english(m.effect_entries);
+  const effect = english(m.effect_entries)?.short_effect ?? english(m.flavor_text_entries)?.flavor_text;
   return {
     id: m.id,
     name: m.name,
@@ -60,7 +64,7 @@ export function toMoveRow(m: MoveDetail): MoveRow {
     effect_chance: m.effect_chance,
     target: m.target?.name ?? "",
     generation: m.generation?.name ?? "",
-    effect: clean(effect?.short_effect).replace(
+    effect: clean(effect).replace(
       /\$effect_chance/g,
       String(m.effect_chance ?? ""),
     ),

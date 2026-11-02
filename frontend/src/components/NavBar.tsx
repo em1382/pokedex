@@ -62,6 +62,8 @@ export default function NavBar() {
         anchor="right"
         open={open}
         onClose={() => setOpen(false)}
+        // Stay in the DOM while closed so the button's aria-controls always resolves.
+        keepMounted
         sx={{ display: { md: "none" } }}
       >
         <Box component="nav" sx={{ width: 233, py: fib(8) }}>

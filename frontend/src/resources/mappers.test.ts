@@ -74,6 +74,16 @@ describe("toMoveRow", () => {
     });
   });
 
+  it("falls back to English flavor text for moves without an effect entry", () => {
+    const row = toMoveRow(projected({ ...moveDoc, effect_entries: [] }, moveProjection));
+    expect(row.effect).toBe("The target is punched with a fiery fist.");
+  });
+
+  it("asks the backend for English-only effect and flavor text", () => {
+    expect(moveProjection.english).toEqual(["effect_entries", "flavor_text_entries"]);
+    expect(moveProjection.fields).toEqual(expect.arrayContaining(moveProjection.english!));
+  });
+
   it("handles status moves without power, accuracy or damage class", () => {
     const row = toMoveRow(
       projected({ ...moveDoc, power: null, accuracy: null, damage_class: null, effect_chance: null }, moveProjection),
@@ -125,16 +135,9 @@ describe("toItemRow", () => {
     });
   });
 
-  it("falls back to the legacy cost when there are no prices", () => {
-    const row = toItemRow(projected({ ...itemDoc, prices: [], cost: 200 }, itemProjection));
-    expect(row.buy_price).toBe(200);
-    expect(row.sell_price).toBeNull();
-    expect(row.price_version).toBe("");
-  });
-
-  it("leaves prices empty when PokeAPI has none at all", () => {
-    const row = toItemRow(projected({ ...itemDoc, prices: [], cost: undefined }, itemProjection));
-    expect(row.buy_price).toBeNull();
+  it("leaves prices empty when PokeAPI has none", () => {
+    const row = toItemRow(projected({ ...itemDoc, prices: [] }, itemProjection));
+    expect([row.buy_price, row.sell_price, row.price_version]).toEqual([null, null, ""]);
   });
 
   it("keeps non-PokeAPI sprite URLs as they are", () => {

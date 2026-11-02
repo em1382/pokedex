@@ -11,6 +11,7 @@ export const abilityProjection: Projection = {
     "id", "name", "is_main_series", "generation", "effect_entries",
     "flavor_text_entries", "pokemon",
   ],
+  english: ["effect_entries", "flavor_text_entries"],
 };
 
 interface AbilityDetail {

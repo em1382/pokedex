@@ -48,8 +48,13 @@ docker run --rm -p 3000:3000 pokedex          # http://localhost:3000
 - Build args: `POKEAPI_RESOURCES` (default `pokemon,moves,abilities,items,types`),
   `POKEAPI_SPRITES` (`0` to skip images), `POKEAPI_DELAY` (seconds between upstream requests,
   default `0.05`).
-- Fair use: PokeAPI responses are kept in a BuildKit cache mount (`id=pokeapi-cache`), so rebuilds
-  reuse them instead of downloading again.
+- Fair use: PokeAPI responses and sprite images are kept in a BuildKit cache mount
+  (`id=pokeapi-cache`), so rebuilds reuse them instead of downloading again.
+- The import runs with `STRICT=1`: if any record or sprite fails to download, the build fails
+  instead of shipping an image with missing data.
+- `docker stop` shuts both servers down promptly at any point. If either server exits on its own,
+  the container exits non-zero, so restart policies notice.
+- The image builds on x86_64 and ARM64 (e.g. Apple Silicon).
 - Rails' production SSL settings are opt-in (`RAILS_FORCE_SSL=1`, `RAILS_ASSUME_SSL=1`), because
   in this setup Rails is never exposed directly. `SECRET_KEY_BASE` defaults to a random value per
   boot (the API has no sessions); set it explicitly if you need a stable one.
@@ -60,6 +65,7 @@ docker run --rm -p 3000:3000 pokedex          # http://localhost:3000
 pnpm import                                              # pokemon, move, ability, item, type + sprites
 cd backend && bin/rails pokeapi:import RESOURCES=berries # any PokeAPI v2 resource (plural or PokeAPI name)
 bin/rails pokeapi:import SPRITES=0 FORCE=1 DELAY=0.1     # skip images, refresh records, slower
+bin/rails pokeapi:import STRICT=1                        # exit non-zero if anything failed
 pnpm import:status                                       # row counts per resource
 ```
 
@@ -72,11 +78,21 @@ it downloads the sprite each grid shows into `pokeapi_sprites`.
 It follows PokeAPI's [fair use policy](https://pokeapi.co/docs/v2#fairuse):
 
 - Records already in SQLite are skipped, so re-running the import is cheap.
-- Upstream requests run one at a time, 50 ms apart (`DELAY`), and send a descriptive `User-Agent`.
-- Every PokeAPI response is also cached in `backend/storage/pokeapi_cache`. A `FORCE=1` re-import reads from that cache instead of calling PokeAPI again (30-day TTL). You can delete the folder once the import is done.
+- Upstream requests run one at a time, with a 50 ms pause (`DELAY`) after every request that reaches
+  the network, failed ones included, and send a descriptive `User-Agent`.
+- Rate limiting (429) and server errors (5xx) are retried up to 4 times with backoff (1, 2, 4 s),
+  honouring `Retry-After` (capped at 60 s). Other errors fail that one record and are reported.
+- Every PokeAPI response and sprite image is also cached in `backend/storage/pokeapi_cache`
+  (30-day TTL). A `FORCE=1` re-import, or a rebuilt database, reads from that cache instead of
+  calling PokeAPI or GitHub again. You can delete the folder once the import is done.
 
-To use the app on another machine with no network, copy
-`backend/storage/development.sqlite3`.
+To use the app on another machine with no network, export a single self-contained copy of the
+database (the live file is in WAL mode, so copying it directly can miss recent rows):
+
+```sh
+cd backend && bin/rails pokeapi:export FILE=/tmp/pokeapi.sqlite3
+# then on the other machine: copy it to backend/storage/development.sqlite3
+```
 
 ## Rails API
 
@@ -84,7 +100,7 @@ To use the app on another machine with no network, copy
 |---------------------------------------------|---------------------------------------------------------------------|
 | `GET /api/:resources?limit=&offset=`        | PokeAPI-style paginated list (`count`, `next`, `previous`, `results`) |
 | `GET /api/:resources/:id_or_name`           | The stored PokeAPI record, verbatim                                 |
-| `GET /api/:resources/all?fields=&counts=`   | Every record in one JSON array, ordered by id, optionally trimmed   |
+| `GET /api/:resources/all?fields=&counts=&english=` | Every record in one JSON array, ordered by id, optionally trimmed (streamed) |
 | `GET /sprites/*path`                        | Sprite image (same path as under `PokeAPI/sprites/master/sprites/`) |
 
 Collection paths are plural (`/api/moves`, `/api/abilities`, `/api/pokemon-species`); "pokemon"
@@ -97,8 +113,12 @@ record inside SQLite (`PokeapiProjection`):
 
 - `fields=id,name,sprites.front_default`: dotted paths to keep. Nesting and JSON types are preserved.
 - `counts=moves`: replaces an array with `moves_count`.
+- `english=flavor_text_entries`: reduces a localized array (also listed in `fields`) to its first
+  English entry, instead of every language for every game version.
 
-The Pokémon grid fetches about 420 KB this way.
+What each grid fetches this way: Pokémon 1.7 MB, items 1.6 MB, moves 0.9 MB, abilities 0.6 MB,
+types 0.02 MB (uncompressed). The response is streamed in batches, so even an untrimmed request
+(all Pokémon, about 177 MB) doesn't load everything into memory. `limit` must be at least 1.
 
 Code: `backend/app/controllers/pokeapi_controller.rb`, `app/services/pokeapi_{importer,projection,client}.rb`,
 `app/models/pokeapi_{record,sprite}.rb`, `lib/tasks/pokeapi.rake`.
@@ -108,20 +128,28 @@ Code: `backend/app/controllers/pokeapi_controller.rb`, `app/services/pokeapi_{im
 ```
 frontend/src/
   app/page.tsx                 directory of grids
-  app/[resources]/page.tsx     one grid page per resource at its plural path: /pokemon, /moves,
-                               /abilities, /items, /types (singular URLs 308-redirect, next.config.ts)
-  components/ResourceGrid.tsx  DataGrid, client pagination, toolbar + quick filter
+  app/(grids)/<path>/page.tsx  one static route per grid: /pokemon, /moves, /abilities, /items,
+                               /types (singular URLs 308-redirect, next.config.ts); unknown paths 404
+  app/error.tsx                recoverable error page
+  components/GridPage.tsx      title + grid (skeleton while rows stream in)
+  components/ResourceGrid.tsx  DataGrid, client pagination, toolbar + quick filter, URL state
   lib/api.ts                   server-only Rails client (one /all request per grid)
   resources/
     meta.ts                    slugs, plural paths, labels, descriptions
     index.ts                   slug → projection + row mapper (server)
     columns.ts                 slug → column defs (client)
-    <slug>/mapper.ts           projection (fields/counts) + PokeAPI record → flat row
+    <slug>/mapper.ts           projection (fields/counts/english) + PokeAPI record → flat row
     <slug>/columns.tsx         GridColDef[] for that row
 ```
 
-`RAILS_API_URL` (default `http://localhost:3001`) is used for server-side fetches
-and for the `/sprites` rewrite in `next.config.ts`.
+`RAILS_API_URL` (default `http://localhost:3001`) is used for server-side fetches at runtime,
+and for the `/sprites` rewrite in `next.config.ts`, which is fixed at **build** time
+(`next build` / `docker build`), so set it before building.
+
+Each grid's rows are cached in memory for an hour (`"use cache"` in `resources/index.ts`), so page
+views don't re-fetch and re-map every record. After a re-import, restart the front-end (or wait up to
+an hour) to see new data. Unknown paths return a real 404, each grid has its own tab title, and
+unexpected errors show a recoverable error page (`app/error.tsx`).
 
 ### Shareable links
 
@@ -140,9 +168,10 @@ Each grid's view is kept in the URL, so copying the address bar shares exactly w
 | `q`        | quick search text                                                    |
 | `hide`     | comma-separated hidden columns                                       |
 
-Defaults are left out, and unknown or invalid values are ignored (the URL is cleaned up).
-Changes use `history.replaceState`, so updating the URL never re-fetches the rows
-(`lib/gridUrlState.ts`, `components/ResourceGrid.tsx`).
+Defaults are left out, and unknown or invalid values are ignored and cleaned out of the URL.
+That includes filter operators the column doesn't offer. The ID column can't be hidden. Following
+a link to a grid (e.g. its nav-bar link) shows that link's view. Changes use `history.replaceState`,
+so updating the URL never re-fetches the rows (`lib/gridUrlState.ts`, `components/ResourceGrid.tsx`).
 
 ### Adding a grid
 
@@ -151,19 +180,17 @@ Changes use `history.replaceState`, so updating the URL never re-fetches the row
    and a singular→plural redirect in `next.config.ts`.
 3. Create `resources/<slug>/mapper.ts` (projection plus `toRow`) and `resources/<slug>/columns.tsx`.
 4. Register them in `resources/index.ts` and `resources/columns.ts`.
+5. Add its page, `app/(grids)/<path>/page.tsx` (copy an existing one and change the slug). A test
+   fails if a grid in `meta.ts` has no page.
 
 ## Tests
 
-```sh
-pnpm test        # Rails (Minitest) + frontend lint, typecheck and Vitest
-pnpm coverage    # both suites with coverage (backend/coverage, frontend/coverage)
-pnpm build       # production build of the frontend
-```
-
 - **Backend** (`backend/test`, Minitest): models, services (upstream client, importer,
-  projection) and controllers. The network is disabled with WebMock, so tests never call PokeAPI.
-  Coverage: `COVERAGE=1 bin/rails test` (SimpleCov, line + branch).
+  projection), controllers and rake tasks. The network is disabled with WebMock, so tests never call
+  PokeAPI. Coverage: `COVERAGE=1 bin/rails test` (SimpleCov, line + branch).
 - **Frontend** (`frontend/src/**/*.test.ts(x)`, Vitest + Testing Library on jsdom): row mappers run
-  against the backend's `fields`/`counts` projection (`test/fixtures.ts`), the API client, loaders,
-  grid configuration (MIT limits), components, the server-component grid page and `next.config.ts`.
-  `pnpm --filter frontend test:watch` for watch mode.
+  against the backend's `fields`/`counts`/`english` projection (`test/fixtures.ts`), the API client,
+  loaders, grid configuration (MIT limits) with the real DataGrid as well, URL state, components, the
+  grid page and its routes, and `next.config.ts`. `pnpm --filter frontend test:watch` for watch mode.
+
+Both suites are at 100% coverage.

@@ -12,9 +12,10 @@ export const SPRITE_BASE = "https://raw.githubusercontent.com/PokeAPI/sprites/ma
 
 /**
  * Apply a projection like the backend does: keep dotted `fields` (nested
- * structure preserved, missing → null) and turn `counts` arrays into `<key>_count`.
+ * structure preserved, missing → null), turn `counts` arrays into `<key>_count`,
+ * and reduce `english` arrays to their first English entry.
  */
-export function project(doc: Doc, { fields, counts = [] }: Projection): Doc {
+export function project(doc: Doc, { fields, counts = [], english = [] }: Projection): Doc {
   const out: Doc = {};
   for (const path of fields) {
     const keys = path.split(".");
@@ -28,6 +29,10 @@ export function project(doc: Doc, { fields, counts = [] }: Projection): Doc {
     dst[keys.at(-1)!] = src === undefined ? null : src;
   }
   for (const key of counts) out[`${key}_count`] = (doc[key] as unknown[] | undefined)?.length ?? null;
+  for (const key of english) {
+    const entries = (doc[key] as { language?: { name: string } }[] | undefined) ?? [];
+    out[key] = entries.filter((e) => e.language?.name === "en").slice(0, 1);
+  }
   return out;
 }
 
@@ -80,7 +85,10 @@ export const moveDoc: Doc = {
     },
   ],
   learned_by_pokemon: [res("charmander"), res("charizard")],
-  flavor_text_entries: [{ flavor_text: "ignored" }],
+  flavor_text_entries: [
+    { flavor_text: "Un coup de poing enflammé.", language: res("fr", "language/5") },
+    { flavor_text: "The target is punched\nwith a fiery fist.", language: en },
+  ],
 };
 
 export const abilityDoc: Doc = {
@@ -103,7 +111,6 @@ export const abilityDoc: Doc = {
 export const itemDoc: Doc = {
   id: 1,
   name: "master-ball",
-  cost: null, // current PokeAPI: price lives in `prices`
   fling_power: null,
   fling_effect: null,
   category: res("standard-balls"),

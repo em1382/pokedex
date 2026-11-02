@@ -1,20 +1,8 @@
-// Minimal shapes of the PokeAPI v2 payloads we read. Rails passes these through untouched.
+// Minimal shapes of the PokeAPI v2 data the grids read.
 
 export interface NamedAPIResource {
   name: string;
   url: string;
-}
-
-export interface NamedAPIResourceList {
-  count: number;
-  next: string | null;
-  previous: string | null;
-  results: NamedAPIResource[];
-}
-
-export interface Name {
-  name: string;
-  language: NamedAPIResource;
 }
 
 export interface VerboseEffect {
@@ -23,12 +11,9 @@ export interface VerboseEffect {
   language: NamedAPIResource;
 }
 
-/** English entry from a localized array, falling back to the first entry. */
-export function english<T extends { language: NamedAPIResource }>(
-  entries: T[] | undefined | null,
-): T | undefined {
-  if (!entries?.length) return undefined;
-  return entries.find((e) => e.language.name === "en") ?? entries[0];
+/** The English entry of a localized array. */
+export function english<T extends { language: NamedAPIResource }>(entries: T[] | undefined | null): T | undefined {
+  return entries?.find((e) => e.language.name === "en");
 }
 
 export function names(list: NamedAPIResource[] | undefined | null): string {

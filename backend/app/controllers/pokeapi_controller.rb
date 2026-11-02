@@ -2,17 +2,21 @@
 # works offline; data gets in via `bin/rails pokeapi:import`.
 class PokeapiController < ApplicationController
   MAX_LIMIT = 100_000
+  # Records per query while streaming /all (a full Pokémon record is ~250 KB).
+  STREAM_BATCH = 100
+
+  class BadRequest < StandardError; end
 
   before_action :check_resource!
 
-  rescue_from PokeapiProjection::Invalid, ArgumentError do |e|
+  rescue_from BadRequest, PokeapiProjection::Invalid do |e|
     render json: { error: e.message }, status: :bad_request
   end
 
   # GET /api/:resources?limit=&offset=  (same shape as PokeAPI's list endpoint)
   def index
-    limit = int_param(:limit, default: 20, max: MAX_LIMIT)
-    offset = int_param(:offset, default: 0)
+    limit = int_param(:limit, default: 20, min: 1, max: MAX_LIMIT)
+    offset = int_param(:offset, default: 0, min: 0)
     scope = records.order(:pokeapi_id)
     count = scope.count
     return not_imported if count.zero?
@@ -28,26 +32,28 @@ class PokeapiController < ApplicationController
     }
   end
 
-  # GET /api/:resources/all?fields=a,b.c&counts=moves
-  # Every record in one response (ordered by id), optionally trimmed.
+  # GET /api/:resources/all?fields=a,b.c&counts=moves&english=flavor_text_entries
+  # Every record in one JSON array (ordered by id), optionally trimmed. Streamed
+  # in batches, so memory stays flat even for untrimmed Pokémon (~170 MB).
   def all
-    projection = PokeapiProjection.new(fields: params[:fields], counts: params[:counts])
-    expr, binds = projection.to_sql
-    sql = ActiveRecord::Base.sanitize_sql_array(
-      ["SELECT #{expr} FROM pokeapi_records WHERE resource = ? ORDER BY pokeapi_id", *binds, resource]
-    )
-    docs = ActiveRecord::Base.connection.select_values(sql)
-    return not_imported if docs.empty?
+    projection = PokeapiProjection.new(fields: params[:fields], counts: params[:counts], english: params[:english])
+    imported_at = records.maximum(:updated_at)
+    return not_imported unless imported_at
 
-    render_json "[#{docs.join(',')}]"
+    expires_in 1.hour, public: true
+    # Also stops Rack::ETag from buffering the whole body to hash it.
+    response.headers["Last-Modified"] = imported_at.httpdate
+    response.headers["Content-Type"] = "application/json"
+    self.response_body = stream_json_array(projection)
   end
 
   # GET /api/:resources/:id_or_name  (verbatim PokeAPI record)
   def show
     record = PokeapiRecord.lookup(resource, params[:id])
-    return render(json: { error: "#{resource}/#{params[:id]} not found" }, status: :not_found) unless record
+    return render(json: { error: "#{path}/#{params[:id]} not found" }, status: :not_found) unless record
 
-    render_json record.body
+    expires_in 1.hour, public: true
+    render body: record.body, content_type: "application/json"
   end
 
   private
@@ -72,18 +78,41 @@ class PokeapiController < ApplicationController
     }, status: :not_found
   end
 
-  def render_json(body)
-    expires_in 1.hour, public: true
-    render body: body, content_type: "application/json"
+  # "[" doc, doc, … "]", reading STREAM_BATCH records at a time by id (keyset paging).
+  def stream_json_array(projection)
+    expr, binds = projection.to_sql
+    resource = self.resource
+    Enumerator.new do |out|
+      out << "["
+      last_id = nil
+      loop do
+        rows = ActiveRecord::Base.with_connection do |db|
+          db.select_rows(ActiveRecord::Base.sanitize_sql_array([
+            "SELECT pokeapi_id, #{expr} FROM pokeapi_records " \
+            "WHERE resource = ? AND pokeapi_id > ? ORDER BY pokeapi_id LIMIT ?",
+            *binds, resource, last_id || -1, STREAM_BATCH
+          ]))
+        end
+        break if rows.empty?
+
+        rows.each do |id, doc|
+          out << (last_id ? ",#{doc}" : doc)
+          last_id = id
+        end
+      end
+      out << "]"
+    end
   end
 
-  def int_param(name, default:, max: nil)
+  def int_param(name, default:, min:, max: nil)
     return default if params[name].blank?
 
     value = Integer(params[name].to_s, 10)
-    raise ArgumentError, "#{name} must be between 0 and #{max || 'infinity'}" if value.negative? || (max && value > max)
+    raise ArgumentError if value < min || (max && value > max)
 
     value
+  rescue ArgumentError
+    raise BadRequest, "#{name} must be an integer between #{min} and #{max || 'infinity'}"
   end
 
   def record_url(id) = "#{request.base_url}/api/#{path}/#{id}/"

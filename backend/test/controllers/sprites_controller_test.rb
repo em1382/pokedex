@@ -15,4 +15,14 @@ class SpritesControllerTest < ActionDispatch::IntegrationTest
     get "/sprites/pokemon/0.png"
     assert_response :not_found
   end
+
+  test "never serves a stored non-image type as-is" do
+    PokeapiSprite.create!(path: "pokemon/0.png", content_type: "text/html", data: "<script>".b)
+
+    get "/sprites/pokemon/0.png"
+
+    assert_response :ok
+    assert_equal "application/octet-stream", response.media_type
+    assert_equal "nosniff", response.headers["X-Content-Type-Options"]
+  end
 end

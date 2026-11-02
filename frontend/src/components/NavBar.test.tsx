@@ -39,6 +39,13 @@ describe("NavBar", () => {
     expect(within(header()).getByRole("link", { name: "Items" })).not.toHaveAttribute("aria-current");
   });
 
+  it("points the hamburger's aria-controls at the drawer, even while it's closed", () => {
+    const { container } = render(<NavBar />);
+    const id = screen.getByRole("button", { name: "Open navigation" }).getAttribute("aria-controls");
+    expect(id).toBe("nav-drawer");
+    expect(container.ownerDocument.getElementById(id!)).not.toBeNull();
+  });
+
   it("opens a drawer with every grid from the hamburger button", async () => {
     render(<NavBar />);
     const button = screen.getByRole("button", { name: "Open navigation" });

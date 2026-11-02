@@ -10,8 +10,8 @@ describe("english", () => {
     expect(english(entries)?.text).toBe("en");
   });
 
-  it("falls back to the first entry when there is no English one", () => {
-    expect(english([{ text: "fr", language: lang("fr") }])?.text).toBe("fr");
+  it("finds nothing rather than showing another language", () => {
+    expect(english([{ text: "fr", language: lang("fr") }])).toBeUndefined();
   });
 
   it("handles empty and missing lists", () => {

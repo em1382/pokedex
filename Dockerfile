@@ -34,12 +34,14 @@ ARG POKEAPI_RESOURCES=pokemon,moves,abilities,items,types
 ARG POKEAPI_SPRITES=1
 ARG POKEAPI_DELAY=0.05
 
-# PokeAPI fair use: every response lands in a BuildKit cache mount, so
-# rebuilding the image re-reads it instead of hitting PokeAPI again.
+# Fair use: every PokeAPI response and sprite image lands in a BuildKit cache
+# mount, so rebuilding the image re-reads them instead of downloading again.
+# STRICT=1: a record or sprite that fails to download fails the build, rather
+# than shipping an image with missing data.
 RUN --mount=type=cache,id=pokeapi-cache,target=/app/backend/storage/pokeapi_cache \
     SECRET_KEY_BASE_DUMMY=1 bin/rails db:prepare \
  && SECRET_KEY_BASE_DUMMY=1 RESOURCES="${POKEAPI_RESOURCES}" SPRITES="${POKEAPI_SPRITES}" DELAY="${POKEAPI_DELAY}" \
-    bin/rails pokeapi:import \
+    STRICT=1 bin/rails pokeapi:import \
  && SECRET_KEY_BASE_DUMMY=1 bin/rails pokeapi:status
 
 # -------------------------------------------------------------------- web
@@ -61,7 +63,8 @@ RUN pnpm --filter frontend build \
 # ---------------------------------------------------------------- runtime
 FROM ruby:${RUBY_VERSION}-slim-bookworm AS runtime
 
-COPY --from=node:24-bookworm-slim /usr/local/bin/node /usr/local/bin/node
+# The same Node that built the front-end (follows the NODE_VERSION build arg).
+COPY --from=web /usr/local/bin/node /usr/local/bin/node
 
 ENV RAILS_ENV=production \
     BUNDLE_DEPLOYMENT=1 \
@@ -81,7 +84,8 @@ COPY --chmod=755 docker/start.sh /app/start.sh
 
 USER app
 EXPOSE 3000
-HEALTHCHECK --interval=30s --timeout=5s --start-period=20s \
+# start-period matches start.sh's 60s wait for Rails to boot.
+HEALTHCHECK --interval=30s --timeout=5s --start-period=60s \
   CMD node -e "Promise.all(['http://127.0.0.1:3000/', 'http://127.0.0.1:3001/up'].map(u => fetch(u))).then(rs => process.exit(rs.every(r => r.ok) ? 0 : 1), () => process.exit(1))"
 
 CMD ["/app/start.sh"]

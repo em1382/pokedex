@@ -126,4 +126,48 @@ class PokeapiControllerTest < ActionDispatch::IntegrationTest
     assert_equal "application/json", response.media_type
     assert_match "public", response.headers["Cache-Control"]
   end
+
+  test "limit must be at least 1 (0 would make next point at the same page forever)" do
+    get "/api/pokemon", params: { limit: 0 }
+    assert_response :bad_request
+    assert_match "between 1 and", response.parsed_body["error"]
+  end
+
+  test "all streams every record across several batches, in id order" do
+    now = Time.current
+    rows = (1..(PokeapiController::STREAM_BATCH * 2 + 5)).map do |id|
+      { resource: "move", name: "m#{id}", pokeapi_id: id, body: { id: id }.to_json, created_at: now, updated_at: now }
+    end
+    PokeapiRecord.insert_all(rows)
+
+    get "/api/moves/all"
+
+    assert_response :ok
+    assert_equal (1..rows.size).to_a, response.parsed_body.pluck("id")
+    assert_equal now.httpdate, response.headers["Last-Modified"]
+    assert_nil response.headers["ETag"]
+  end
+
+  test "all can reduce localized arrays to their first English entry" do
+    en = { name: "en", url: "" }
+    fr = { name: "fr", url: "" }
+    add_record("move", 1, "pound", flavor_text_entries: [
+      { text: "Écras'Face", language: fr }, { text: "Pound!", language: en }, { text: "Pound again", language: en }
+    ])
+    add_record("move", 2, "untranslated", flavor_text_entries: [{ text: "Écras'Face", language: fr }])
+
+    get "/api/moves/all", params: { fields: "id,flavor_text_entries", english: "flavor_text_entries" }
+
+    assert_response :ok
+    assert_equal [
+      { "id" => 1, "flavor_text_entries" => [{ "text" => "Pound!", "language" => { "name" => "en", "url" => "" } }] },
+      { "id" => 2, "flavor_text_entries" => [] }
+    ], response.parsed_body
+  end
+
+  test "rejects projections whose keys would clash" do
+    get "/api/pokemon/all", params: { fields: "id,moves_count", counts: "moves" }
+    assert_response :bad_request
+    assert_match "clash", response.parsed_body["error"]
+  end
 end

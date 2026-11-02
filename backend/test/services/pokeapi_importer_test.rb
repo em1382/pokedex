@@ -63,11 +63,26 @@ class PokeapiImporterTest < ActiveSupport::TestCase
     png = stub_request(:get, url).to_return(status: 200, body: "PNG", headers: { "Content-Type" => "image/png" })
 
     importer = PokeapiImporter.new(delay: 0)
-    assert_equal [1, 0], importer.import_sprites("pokemon")
-    assert_equal [0, 0], importer.import_sprites("pokemon")
+    first = importer.import_sprites("pokemon")
+    second = importer.import_sprites("pokemon")
 
+    assert_equal [1, 0, [], []], first.to_a
+    assert_equal [0, 0, [], []], second.to_a
     assert_requested png, times: 1
     assert_equal "PNG", PokeapiSprite.find_by!(path: "pokemon/25.png").data
+  end
+
+  test "sprites come from the HTTP cache after the database is rebuilt" do
+    url = "#{PokeapiSprite::UPSTREAM_PREFIX}pokemon/25.png"
+    add_record("pokemon", 25, "pikachu", sprites: { front_default: url })
+    png = stub_request(:get, url).to_return(status: 200, body: "PNG", headers: { "Content-Type" => "image/png" })
+    PokeapiImporter.new(delay: 0).import_sprites("pokemon")
+    PokeapiSprite.delete_all
+
+    result = PokeapiImporter.new(delay: 0).import_sprites("pokemon")
+
+    assert_equal [0, 1], [result.downloaded, result.cached]
+    assert_requested png, times: 1
   end
 
   test "rejects unknown resources" do
@@ -105,16 +120,19 @@ class PokeapiImporterTest < ActiveSupport::TestCase
     stub_request(:get, urls[2]).to_return(status: 500)
 
     log = []
-    downloaded, missing = PokeapiImporter.new(delay: 0, log: ->(msg) { log << msg }).import_sprites("pokemon")
+    result = PokeapiImporter.new(delay: 0, log: ->(msg) { log << msg }).import_sprites("pokemon")
 
-    assert_equal [1, 2], [downloaded, missing]
+    assert_equal 1, result.downloaded
+    assert_equal ["pokemon/2.png"], result.missing
+    assert_equal ["pokemon/3.png"], result.failed
+    assert_predicate result, :failed?
     assert_equal ["pokemon/1.png"], PokeapiSprite.pluck(:path)
     assert(log.any? { _1.include?("pokemon/3.png") })
     assert_not_requested :get, "https://example.com/x.png"
   end
 
   test "resources without grid sprites have nothing to download" do
-    assert_equal [0, 0], PokeapiImporter.new(delay: 0).import_sprites("move")
+    assert_equal [0, 0, [], []], PokeapiImporter.new(delay: 0).import_sprites("move").to_a
   end
 
   test "a batch where every record fails writes nothing" do
@@ -125,5 +143,21 @@ class PokeapiImporterTest < ActiveSupport::TestCase
 
     assert_equal [0, ["gone"]], [result.imported, result.failed]
     assert_equal 0, PokeapiRecord.of("move").count
+  end
+
+  test "pauses after every request that reaches the network, including failures" do
+    stub_list("type", [["fire", 10], ["water", 11], ["grass", 12]])
+    stub_detail("type", "fire", { id: 10, name: "fire" })
+    stub_request(:get, "#{BASE}/type/water/").to_return(status: 500)
+    stub_detail("type", "grass", { id: 12, name: "grass" })
+    PokeapiClient.detail("type", "grass") # already cached → no pause
+
+    importer = PokeapiImporter.new(delay: 0.01)
+    pauses = 0
+    importer.define_singleton_method(:sleep) { |_| pauses += 1 }
+    result = importer.import("type")
+
+    assert_equal %w[water], result.failed
+    assert_equal 2, pauses # fire (fetched) + water (failed); grass came from cache
   end
 end

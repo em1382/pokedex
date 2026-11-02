@@ -10,17 +10,16 @@ import {
 
 export const itemProjection: Projection = {
   fields: [
-    "id", "name", "cost", "prices", "fling_power", "fling_effect", "category",
+    "id", "name", "prices", "fling_power", "fling_effect", "category",
     "attributes", "sprites.default", "effect_entries", "flavor_text_entries",
   ],
   counts: ["held_by_pokemon"],
+  english: ["effect_entries", "flavor_text_entries"],
 };
 
 interface ItemDetail {
   id: number;
   name: string;
-  /** Legacy flat price; null/absent in current PokeAPI data (see `prices`). */
-  cost?: number | null;
   prices?: {
     purchase_price: number | null;
     sell_price: number | null;
@@ -63,7 +62,7 @@ export function toItemRow(i: ItemDetail): ItemRow {
     name: i.name,
     sprite: localSprite(i.sprites?.default),
     category: i.category?.name ?? "",
-    buy_price: price?.purchase_price ?? i.cost ?? null,
+    buy_price: price?.purchase_price ?? null,
     sell_price: price?.sell_price ?? null,
     price_version: price?.version_group.name ?? "",
     fling_power: i.fling_power,

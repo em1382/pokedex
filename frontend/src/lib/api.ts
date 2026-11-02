@@ -5,7 +5,7 @@ import "server-only";
  * time). The browser never talks to Rails directly, except for sprite images,
  * which go through the /sprites rewrite in next.config.ts.
  */
-export const RAILS_API_URL = process.env.RAILS_API_URL ?? "http://localhost:3001";
+const RAILS_API_URL = process.env.RAILS_API_URL ?? "http://localhost:3001";
 
 export class BackendError extends Error {
   constructor(
@@ -22,6 +22,8 @@ export interface Projection {
   fields: string[];
   /** Top-level arrays to return only as "<name>_count". */
   counts?: string[];
+  /** Localized top-level arrays (also in `fields`) to reduce to their first English entry. */
+  english?: string[];
 }
 
 async function fetchJson<T>(path: string): Promise<T> {
@@ -29,9 +31,9 @@ async function fetchJson<T>(path: string): Promise<T> {
   try {
     res = await fetch(`${RAILS_API_URL}${path}`, { cache: "no-store" });
   } catch (err) {
-    throw new BackendError(
-      `Could not reach the Rails API at ${RAILS_API_URL} (${(err as Error).message}). Is it running?`,
-    );
+    // Details (incl. the internal address) go to the server log, not the page.
+    console.error(`[api] could not reach the Rails API at ${RAILS_API_URL}${path}:`, err);
+    throw new BackendError("The data service is unavailable right now. Please try again shortly.");
   }
   if (!res.ok) {
     const body = (await res.json().catch(() => null)) as { error?: string } | null;
@@ -49,6 +51,7 @@ export async function getResourceRows<D, R>(
 ): Promise<R[]> {
   const query = new URLSearchParams({ fields: projection.fields.join(",") });
   if (projection.counts?.length) query.set("counts", projection.counts.join(","));
+  if (projection.english?.length) query.set("english", projection.english.join(","));
   const docs = await fetchJson<D[]>(`/api/${path}/all?${query}`);
   return docs.map(toRow);
 }

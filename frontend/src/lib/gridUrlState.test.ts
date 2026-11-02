@@ -1,7 +1,13 @@
 import type { GridColDef } from "@mui/x-data-grid";
 import { describe, expect, it } from "vitest";
 
-import { parseGridState, serializeGridState, type GridUrlOptions, type GridUrlState } from "./gridUrlState";
+import {
+  filterOperatorsFor,
+  parseGridState,
+  serializeGridState,
+  type GridUrlOptions,
+  type GridUrlState,
+} from "./gridUrlState";
 
 const columns: GridColDef[] = [
   { field: "id", type: "number" },
@@ -79,6 +85,10 @@ describe("parseGridState", () => {
     ["unfilterable column", "filter=sprite&op=equals&value=x", DEFAULT],
     ["filter without operator", "filter=type&value=fire", DEFAULT],
     ["odd operator", "filter=type&op=%3Cscript%3E&value=x", DEFAULT],
+    ["string operator on a number column", "filter=power&op=contains&value=5", DEFAULT],
+    ["number operator on a string column", "filter=name&op=%3E&value=5", DEFAULT],
+    ["boolean operator on a string column", "filter=name&op=is&value=true", DEFAULT],
+    ["string operator on a boolean column", "filter=is_default&op=contains&value=t", DEFAULT],
     ["filter without value", "filter=type&op=equals", DEFAULT],
     ["empty filter value", "filter=type&op=equals&value=", DEFAULT],
     ["non-numeric number value", "filter=power&op=%3D&value=lots", DEFAULT],
@@ -152,5 +162,25 @@ describe("round trip", () => {
     "q=thunder",
   ])("%s", (qs) => {
     expect(serialize(parse(qs))).toBe(qs);
+  });
+});
+
+describe("filterOperatorsFor", () => {
+  it("offers MUI's operators for the column type", () => {
+    expect(filterOperatorsFor({ field: "a" })).toContain("contains");
+    expect(filterOperatorsFor({ field: "a", type: "number" })).toEqual(["=", "!=", ">", ">=", "<", "<=", "isEmpty", "isNotEmpty", "isAnyOf"]);
+    expect(filterOperatorsFor({ field: "a", type: "boolean" })).toEqual(["is"]);
+    expect(filterOperatorsFor({ field: "a", type: "singleSelect" })).toEqual(["is", "not", "isAnyOf"]);
+    expect(filterOperatorsFor({ field: "a", type: "date" })).toContain("after");
+  });
+
+  it("prefers a column's own operators", () => {
+    const column = { field: "a", filterOperators: [{ value: "custom", getApplyFilterFn: () => null }] };
+    expect(filterOperatorsFor(column)).toEqual(["custom"]);
+    const parsed = parseGridState(new URLSearchParams("filter=a&op=custom&value=x"), {
+      ...options,
+      columns: [column],
+    });
+    expect(parsed.filterModel.items).toEqual([{ id: 1, field: "a", operator: "custom", value: "x" }]);
   });
 });

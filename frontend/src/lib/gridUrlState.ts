@@ -1,10 +1,15 @@
-import type {
-  GridColDef,
-  GridColumnVisibilityModel,
-  GridFilterItem,
-  GridFilterModel,
-  GridPaginationModel,
-  GridSortModel,
+import {
+  getGridBooleanOperators,
+  getGridDateOperators,
+  getGridNumericOperators,
+  getGridSingleSelectOperators,
+  getGridStringOperators,
+  type GridColDef,
+  type GridColumnVisibilityModel,
+  type GridFilterItem,
+  type GridFilterModel,
+  type GridPaginationModel,
+  type GridSortModel,
 } from "@mui/x-data-grid";
 
 /**
@@ -22,6 +27,7 @@ import type {
  *   hide      comma-separated hidden columns
  *
  * Unknown or invalid values are ignored, so a stale or hand-edited link still opens.
+ * That includes operators the column doesn't offer: the grid throws on those.
  */
 
 export interface GridUrlState {
@@ -41,8 +47,20 @@ export interface GridUrlOptions {
 const VALUELESS_OPERATORS = new Set(["isEmpty", "isNotEmpty"]);
 /** Operators whose value is a list. */
 const MULTI_VALUE_OPERATORS = new Set(["isAnyOf"]);
-/** Word operators (contains, isAnyOf…) or the numeric comparison symbols. */
-const OPERATOR_FORMAT = /^(?:[A-Za-z]{1,32}|!?=|[<>]=?)$/;
+
+/** Operators DataGrid offers for a column: its own, or the defaults for its type. */
+const DEFAULT_OPERATORS: Record<string, () => { value: string }[]> = {
+  number: getGridNumericOperators,
+  boolean: getGridBooleanOperators,
+  singleSelect: getGridSingleSelectOperators,
+  date: getGridDateOperators,
+  dateTime: getGridDateOperators,
+};
+
+export function filterOperatorsFor(column: GridColDef): string[] {
+  const operators = column.filterOperators ?? (DEFAULT_OPERATORS[column.type ?? ""] ?? getGridStringOperators)();
+  return operators.map((o) => o.value);
+}
 
 export function parseGridState(params: URLSearchParams, options: GridUrlOptions): GridUrlState {
   const { columns, pageSizeOptions, defaultPageSize } = options;
@@ -82,9 +100,8 @@ function parseFilterItem(
   const field = params.get("filter");
   const operator = params.get("op");
   const column = field ? byField.get(field) : undefined;
-  if (!field || !column || column.filterable === false || !operator || !OPERATOR_FORMAT.test(operator)) {
-    return null;
-  }
+  if (!field || !column || column.filterable === false || !operator) return null;
+  if (!filterOperatorsFor(column).includes(operator)) return null;
   if (VALUELESS_OPERATORS.has(operator)) return { id: 1, field, operator };
 
   const raw = params.getAll("value");

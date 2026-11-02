@@ -6,6 +6,9 @@ class SpritesController < ApplicationController
     return head :not_found unless sprite
 
     expires_in 1.year, public: true
-    send_data sprite.data, type: sprite.content_type, disposition: "inline"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    # Only ever serve images under an image type (the importer also only stores images).
+    type = sprite.content_type.start_with?("image/") ? sprite.content_type : "application/octet-stream"
+    send_data sprite.data, type: type, disposition: "inline"
   end
 end
